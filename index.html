@@ -448,7 +448,7 @@ legend{padding:0;margin-bottom:6px}
     <h2 id="shareTitle">Export as Image</h2>
     <p>Every day you're going on one picture: a 16:9 post for X, or an iPhone lock-screen wallpaper that leaves the top clear for the clock. Your handle goes in the header, and 🎫 or 💵 marks your ticket status. It updates whenever the schedule above changes.</p>
     <fieldset><legend>Size</legend><div class="opts">
-      <label><input type="radio" name="shfmt" value="x"><span>X post · 1600 × 900</span></label>
+      <label><input type="radio" name="shfmt" value="x"><span>X post · 3200 × 1800</span></label>
       <label><input type="radio" name="shfmt" value="phone"><span>iPhone wallpaper · 1290 × 2796</span></label>
     </div></fieldset>
     <label class="chk"><input type="checkbox" id="shMaybe"> Include maybes</label>
@@ -1491,7 +1491,7 @@ legend{padding:0;margin-bottom:6px}
   const cmpFilm = (a, b) => ((a.time ? 0 : 1) - (b.time ? 0 : 1)) || ((toMin(a.time) ?? 0) - (toMin(b.time) ?? 0)) || ((a.order ?? 0) - (b.order ?? 0));
   let shareTimer = null, shareGen = 0, shareBlob = null, shareUrl = null, shareKey = '';
   let shMaybe = false, shHandle = '';
-  let shFmt = 'x';
+  let shFmt = 'x', shS = 1;   // shS = pixel scale of the share canvas: the X post renders at 2× for a sharper image
   try { shMaybe = localStorage.getItem('qc-sh-maybe') === '1'; shFmt = localStorage.getItem('qc-sh-fmt') === 'phone' ? 'phone' : 'x'; } catch (_) {}
   const viewHandle = () => (((people.get(viewing) || {}).handle) || '').trim();
   const imgCache = new Map();
@@ -1538,7 +1538,7 @@ legend{padding:0;margin-bottom:6px}
   function drawTicket(ctx, cx, cy, kind) {
     const t = TICKET_STK[kind]; if (!t) return;
     ctx.save(); ctx.translate(cx, cy); ctx.rotate(10 * Math.PI / 180);
-    ctx.shadowColor = 'rgba(7,20,51,.6)'; ctx.shadowOffsetY = 2;
+    ctx.shadowColor = 'rgba(7,20,51,.6)'; ctx.shadowOffsetY = 2 * shS;
     ctx.beginPath(); ctx.arc(0, 0, 17, 0, Math.PI * 2); ctx.fillStyle = t.bg; ctx.fill();
     ctx.shadowColor = 'transparent'; ctx.lineWidth = 2; ctx.strokeStyle = C.onLight; ctx.stroke();
     if (t.emoji) {
@@ -1554,7 +1554,7 @@ legend{padding:0;margin-bottom:6px}
     const iw = im.naturalWidth, ih = im.naturalHeight; if (!iw || !ih) return;
     if (meta.fit === 'whole') {
       const s0 = Math.max(w / iw, hh / ih) * 1.15;
-      if ('filter' in ctx) { ctx.save(); ctx.filter = 'blur(12px) brightness(0.55)'; ctx.drawImage(im, x + (w - iw * s0) / 2, y + (hh - ih * s0) / 2, iw * s0, ih * s0); ctx.restore(); }
+      if ('filter' in ctx) { ctx.save(); ctx.filter = `blur(${12 * shS}px) brightness(0.55)`; ctx.drawImage(im, x + (w - iw * s0) / 2, y + (hh - ih * s0) / 2, iw * s0, ih * s0); ctx.restore(); }
       const s = Math.min(w / iw, hh / ih); ctx.drawImage(im, x + (w - iw * s) / 2, y + (hh - ih * s) / 2, iw * s, ih * s); return;
     }
     const s = Math.max(w / iw, hh / ih), dw = iw * s, dh = ih * s;
@@ -1733,8 +1733,8 @@ legend{padding:0;margin-bottom:6px}
     const phone = shFmt === 'phone';
     const W = phone ? PH.W : SH.W, H = phone ? PH.H : SH.H;
     const { M, GAP, TOP, COLHEAD, BOTTOM } = SH;
-    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-    const ctx = cv.getContext('2d'); ctx.textBaseline = 'alphabetic';
+    shS = phone ? 1 : 2; const cv = document.createElement('canvas'); cv.width = W * shS; cv.height = H * shS;   // layout stays in 1600 × 900 units; the canvas holds twice the pixels
+    const ctx = cv.getContext('2d'); ctx.scale(shS, shS); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.textBaseline = 'alphabetic';
 
     ctx.fillStyle = C.night; ctx.fillRect(0, 0, W, H);
     let g = ctx.createRadialGradient(W, 0, 0, W, 0, 820); g.addColorStop(0, 'rgba(240,70,110,.22)'); g.addColorStop(1, 'rgba(240,70,110,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
@@ -1798,12 +1798,12 @@ legend{padding:0;margin-bottom:6px}
     stickers.forEach(s => drawTicket(ctx, s[0], s[1], s[2]));
     }
 
-    const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+    const blob = await new Promise(res => phone ? cv.toBlob(res, 'image/png') : cv.toBlob(res, 'image/jpeg', 0.95));   // X post: high-quality JPEG (a 3200 × 1800 PNG runs past X's 5 MB photo limit)
     if (my !== shareGen || !blob) return;
     shareKey = key; shareBlob = blob;
     if (shareUrl) URL.revokeObjectURL(shareUrl);
     shareUrl = URL.createObjectURL(blob); imgEl.src = shareUrl; imgEl.hidden = false; ph.hidden = true; imgEl.classList.toggle('tall', phone);
-    cap.textContent = `${W} × ${H} px · PNG`; save.disabled = false;
+    cap.textContent = `${cv.width} × ${cv.height} px · ${phone ? 'PNG' : 'JPG'}`; save.disabled = false;
   }
   const shMaybeEl = $('#shMaybe'), shHandleEl = $('#shHandle');
   shMaybeEl.checked = shMaybe; shHandleEl.disabled = true;
@@ -1828,7 +1828,7 @@ legend{padding:0;margin-bottom:6px}
   $('#shSave').onclick = async () => {
     if (!shareBlob) return;
     const hint = $('#shHint'); hint.textContent = '';
-    const r = await offerFile(shareBlob, shFmt === 'phone' ? 'qcinema-2026-wallpaper.png' : 'qcinema-2026-schedule.png', 'image/png');
+    const jpg = shareBlob.type === 'image/jpeg'; const r = await offerFile(shareBlob, jpg ? 'qcinema-2026-schedule.jpg' : 'qcinema-2026-wallpaper.png', jpg ? 'image/jpeg' : 'image/png');
     if (r === 'failed') hint.textContent = "Couldn't save the image here. Right-click or long-press it to save it instead.";
   };
   $('#shareBtn').onclick = () => $('#share').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
