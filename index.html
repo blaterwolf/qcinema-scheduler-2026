@@ -396,11 +396,13 @@ legend{padding:0;margin-bottom:6px}
 }
 
 /* Backup (this copy saves in the browser only) */
-.backup{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px 44px;align-items:end;padding-block:36px 44px;border-top:1px solid var(--line)}
+.backup{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,400px);gap:18px 44px;align-items:end;padding-block:36px 44px;border-top:1px solid var(--line)}
 .bk-copy{display:grid;gap:12px}
 .bk-copy .eyebrow{margin:0}
 .backup h2{margin:0;font-family:var(--display);font-stretch:78%;font-weight:850;font-size:clamp(28px,3.6vw,40px);line-height:.92;text-transform:uppercase;text-wrap:balance}
 .bk-copy p{margin:0;color:var(--muted);max-width:62ch}
+.bk-copy .bk-note{padding:10px 14px;border:1px solid var(--line);border-left:3px solid var(--sun);border-radius:10px;background:rgba(251,189,46,.06);font-size:13.5px}
+.bk-note strong{color:var(--ink);font-weight:700}
 .bk-act{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:10px}
 .bk-act .chip{padding:9px 16px;font-size:14px}
 .bk-msg{flex-basis:100%;display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;font-size:13px;color:var(--muted);text-align:right}
@@ -466,6 +468,7 @@ legend{padding:0;margin-bottom:6px}
     <p class="eyebrow">Saved on this device</p>
     <h2 id="bkTitle">Back up your plan</h2>
     <p>Your schedule and posters are stored in this browser only. To put them on your phone or another browser, export a backup here, then import that file there. Clearing this site's data deletes them, and Safari can clear it if you don't open the site for a week, so export a fresh copy after big changes.</p>
+    <p class="bk-note"><strong>This isn't the QCinema Interactive backup.</strong> The “My Schedule” backup you save on qcinema.ph/interactive can't be imported here, and this planner's backup can't be imported there. Each one only reads its own files.</p>
   </div>
   <div class="bk-act">
     <button type="button" class="add" id="bkExport">Export backup</button>
@@ -1975,7 +1978,7 @@ legend{padding:0;margin-bottom:6px}
       const n = countEntries(data);
       const out = { app: BACKUP_APP, version: 1, exportedAt: new Date().toISOString(), entries: n, data, images };
       const blob = new Blob([JSON.stringify(out)], { type: 'application/json' });
-      const r = await offerFile(blob, `qcinema-2026-backup-${localDate()}.json`, 'application/json');
+      const r = await offerFile(blob, `qcinema-scheduler-backup-${localDate()}.json`, 'application/json');
       if (r === 'failed') say("Couldn't save the backup file in this browser.", true);
       else if (r === 'cancelled') bkMsg.replaceChildren();
       else say(`Backup ready: ${n} ${n === 1 ? 'entry' : 'entries'}, ${Object.keys(images).length} ${Object.keys(images).length === 1 ? 'image' : 'images'}${missing ? ` (${missing} missing on this device)` : ''}.`);
@@ -1984,7 +1987,8 @@ legend{padding:0;margin-bottom:6px}
   }
   async function readBackup(file) {
     let j = null; try { j = JSON.parse(await file.text()); } catch (_) {}
-    if (!j || j.app !== BACKUP_APP || !j.data || typeof j.data !== 'object') throw new Error("That file isn't a QCinema 2026 planner backup.");
+    if (j && Array.isArray(j.screeningIds) && !j.data) throw new Error("That's a backup from QCinema Interactive (qcinema.ph/interactive). Import it there instead. This planner only reads files made with its own Export backup button.");
+    if (!j || j.app !== BACKUP_APP || !j.data || typeof j.data !== 'object') throw new Error("That file isn't a backup from this planner. Choose a file made with Export backup here.");
     const data = {};
     for (const col of KNOWN_COLS) {
       const docs = j.data[col]; if (!docs || typeof docs !== 'object' || Array.isArray(docs)) continue;
