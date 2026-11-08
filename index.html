@@ -1,0 +1,2051 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>QCinema 2026 Planner</title>
+<meta name="description" content="Plan your QCinema International Film Festival 2026 schedule (Nov 13–22, Quezon City) and share it as one image.">
+<meta name="theme-color" content="#0a1029">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a1029'/%3E%3Ccircle cx='32' cy='30' r='15' fill='none' stroke='%23fbbd2e' stroke-width='7'/%3E%3Cpath d='M38 37l10 11' stroke='%23f0466e' stroke-width='7' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: one row per festival day (Nov 13–22). Big condensed date on the left, that day's films as framed tiles on the right. Header carries the festival's four-colour date pill; a sticky bar holds the filters. Single dark look, taken from the QCinema 2026 key art. */
+:root{
+  color-scheme: dark;
+  --night:#0a1029;
+  --deep:#0e1638;
+  --panel:#121b43;
+  --panel-2:#192453;
+  --line:#26346c;
+  --ink:#eef1ff;
+  --muted:#9aa6d4;
+  --faint:#5f6ca3;
+  --cyan:#14b2dc;
+  --blue:#3d9be6;
+  --duo:#52b6ef;
+  --sun:#fbbd2e;
+  --rose:#f0466e;
+  --indigo:#2c3d92;
+  --on-light:#071433;
+  --display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:14px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html,body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--night);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--night)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
+.wrap{max-width:1260px;margin-inline:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* Header */
+.top{padding-block:44px 26px;background:
+  radial-gradient(60% 120% at 92% 0%, rgba(240,70,110,.16), transparent 60%),
+  radial-gradient(50% 100% at 0% 100%, rgba(20,178,220,.12), transparent 60%)}
+.eyebrow{margin:0 0 12px;font-family:var(--display);font-weight:800;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--sun)}
+.eyebrow b{color:var(--rose);font-weight:800}
+h1{margin:0;font-family:var(--display);font-stretch:78%;font-weight:850;font-size:clamp(44px,8vw,92px);line-height:.9;letter-spacing:-.01em;text-transform:uppercase;text-wrap:balance}
+h1 span{color:var(--rose)}
+.pill{display:flex;flex-wrap:nowrap;margin-top:22px;font-family:var(--display);font-weight:600;font-stretch:100%;text-transform:uppercase;font-size:clamp(10.5px,2.5vw,14px);letter-spacing:.16em;white-space:nowrap;max-width:100%}
+.seg{position:relative;padding:.62em 1.1em;border-radius:999px}
+.s1{background:var(--cyan);color:var(--on-light);z-index:1;padding-right:1.7em}
+.s2{background:var(--sun);color:var(--on-light);margin-left:-1.1em;z-index:4}
+.s3{background:var(--rose);color:#fff;margin-left:-1.1em;padding-left:1.7em;z-index:3}
+.s4{background:var(--indigo);color:var(--ink);margin-left:-1.1em;padding-left:1.7em;z-index:2;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.status{margin:18px 0 0;color:var(--muted);font-size:14px;display:flex;flex-wrap:wrap;gap:4px 16px}
+.status strong{color:var(--ink);font-weight:600}
+.status .warn{color:var(--rose)}
+.legend{margin:6px 0 0;color:var(--faint);font-size:13px}
+.legend .k{color:var(--sun)}
+.legend .b{color:var(--duo)}
+
+/* Sticky bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(10,16,41,.9);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-block:1px solid var(--line)}
+.bar-in{display:flex;align-items:center;gap:12px;padding-block:10px}
+.filters{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;min-width:0;flex:1;padding-block:2px}
+.filters::-webkit-scrollbar{display:none}
+.chip{flex:none;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted);font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
+.chip b{font-family:var(--mono);font-weight:500;font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums}
+.chip:hover{color:var(--ink);border-color:var(--faint)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--on-light);border-color:var(--ink)}
+.chip[aria-pressed="true"] b{color:var(--on-light);opacity:.65}
+.add{flex:none;padding:9px 16px;border-radius:999px;border:0;background:var(--sun);color:var(--on-light);font-weight:700;font-size:14px;cursor:pointer}
+.add:hover{filter:brightness(1.06)}
+
+/* Day rows */
+.days{padding-block:6px 40px}
+.day{position:relative;display:grid;grid-template-columns:160px minmax(0,1fr);gap:24px;padding-block:24px;border-top:1px solid var(--line)}
+.day:first-child{border-top:0}
+.date{display:grid;grid-template-areas:"mo" "dn" "wd" "sum" "st" "ad";justify-items:start;align-content:start;row-gap:2px}
+.dadd{grid-area:ad;margin-top:10px;border:0;background:transparent;color:var(--cyan);font-weight:600;font-size:13px;cursor:pointer;padding:4px 0}
+.dadd:hover{color:var(--ink)}
+.mo{grid-area:mo;font-family:var(--display);font-weight:800;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--cyan)}
+.dn{grid-area:dn;font-family:var(--display);font-stretch:62%;font-weight:900;font-size:84px;line-height:.84;font-variant-numeric:tabular-nums;color:var(--ink)}
+.wd{grid-area:wd;font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--sun);margin-top:4px}
+.sum{grid-area:sum;font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.5}
+.dstat{grid-area:st;display:inline-flex;margin-top:12px;border:1px solid var(--line);border-radius:999px;padding:2px;gap:2px}
+.dstat button{border:0;background:transparent;color:var(--muted);font-weight:600;font-size:11.5px;letter-spacing:.02em;padding:6px 10px;border-radius:999px;cursor:pointer}
+.dstat button:hover{color:var(--ink)}
+.dstat button[aria-pressed="true"][data-s="attending"]{background:var(--sun);color:var(--on-light)}
+.dstat button[aria-pressed="true"][data-s="tbc"]{background:var(--rose);color:#fff}
+.dstat button[aria-pressed="true"][data-s="skip"]{background:var(--panel-2);color:var(--ink)}
+.dlabel{grid-area:st;margin-top:12px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.day.tbc::before{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(135deg,rgba(240,70,110,.075) 0 12px,transparent 12px 24px)}
+.day.tbc .dn{color:transparent;-webkit-text-stroke:2px var(--rose)}
+.day.tbc .dlabel{color:var(--rose)}
+.day.skip .dn{color:var(--faint);text-decoration:line-through;text-decoration-thickness:4px;text-decoration-color:var(--rose)}
+.day.skip .tiles{opacity:.42}
+.day.today .dn{color:var(--sun)}
+.day.today .mo::after{content:" · Today";color:var(--sun)}
+.day.drop-on{outline:2px dashed var(--sun);outline-offset:-2px;border-radius:var(--r)}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:18px;align-items:start;min-width:0}
+
+/* Cards */
+.card{position:relative;border-radius:var(--r);background:var(--panel);border:1.5px solid rgba(20,178,220,.5);transition:transform .2s ease,border-color .2s ease}
+.card:hover{transform:translateY(-2px);border-color:var(--cyan)}
+.card.drop-on{border-color:var(--sun);box-shadow:0 0 0 3px rgba(251,189,46,.25)}
+.pic{position:relative;aspect-ratio:3/2;max-width:100%;overflow:hidden;border-radius:calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0;background:var(--deep);isolation:isolate;container-type:inline-size}
+.pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:var(--pos,50% 50%);transition:filter .35s ease}
+.pic.whole img.bg{filter:blur(16px) brightness(.55);transform:scale(1.25);object-position:50% 50%}
+.pic.whole img.fg{object-fit:contain}
+.pic .ph{display:none}
+.pic.blank{display:grid;place-items:stretch;background:var(--hue);padding:10px}
+.pic.blank .ph{display:flex;align-items:flex-end;border:1.5px solid rgba(7,20,51,.28);border-radius:9px;padding:10px 11px;font-family:var(--display);font-stretch:68%;font-weight:850;font-size:clamp(14px,12.5cqi,30px);line-height:.95;text-transform:uppercase;color:var(--on-hue);overflow:hidden;overflow-wrap:anywhere;text-wrap:balance}
+.pic.blank .ph.long{font-size:clamp(13px,9.6cqi,24px)}
+.pic.blank .ph.xlong{font-size:clamp(12px,7.4cqi,20px)}
+.pic.blank .ph-hint{position:absolute;right:16px;top:14px;font-size:11px;font-weight:600;color:var(--on-hue);opacity:0;transition:opacity .2s}
+.card:hover .pic.blank .ph-hint{opacity:.75}
+/* Maybe = the key art's blue duotone; hover shows true colour */
+.maybe .pic img.fg{filter:grayscale(1) contrast(1.12)}
+.maybe .pic:not(.blank)::before{content:"";position:absolute;inset:0;z-index:1;background:#0c1a4c;mix-blend-mode:lighten;pointer-events:none;transition:opacity .35s ease}
+.maybe .pic:not(.blank)::after{content:"";position:absolute;inset:0;z-index:2;background:var(--duo);mix-blend-mode:multiply;pointer-events:none;transition:opacity .35s ease}
+.maybe:hover .pic img.fg{filter:none}
+.maybe:hover .pic::before,.maybe:hover .pic::after{opacity:0}
+.maybe .pic.blank{background:var(--deep);box-shadow:inset 0 0 0 1.5px var(--hue)}
+.maybe .pic.blank .ph{color:var(--hue-ink);border-color:transparent}
+.maybe .pic.blank .ph-hint{color:var(--hue-ink)}
+.hue-cyan{--hue:var(--cyan);--on-hue:var(--on-light);--hue-ink:var(--cyan)}
+.hue-sun{--hue:var(--sun);--on-hue:var(--on-light);--hue-ink:var(--sun)}
+.hue-rose{--hue:var(--rose);--on-hue:#fff;--hue-ink:#ff7d9b}
+.hue-blue{--hue:var(--blue);--on-hue:var(--on-light);--hue-ink:var(--duo)}
+.hue-indigo{--hue:#4257c4;--on-hue:#fff;--hue-ink:#a3afff}
+.hue-paper{--hue:#eef1ff;--on-hue:#071433;--hue-ink:#eef1ff}
+.card.outside{border-style:dashed;border-color:rgba(238,241,255,.6)}
+.card.outside:hover{border-color:var(--ink)}
+.tag.out{border:1px dashed rgba(238,241,255,.7);color:var(--ink);font-weight:600}
+
+.sticker{position:absolute;top:-12px;right:-10px;z-index:5;width:38px;height:38px;transform:rotate(14deg);filter:drop-shadow(0 2px 0 rgba(7,20,51,.6));pointer-events:none}
+.sticker svg{width:100%;height:100%;display:block}
+.up{position:absolute;inset:0;z-index:4;display:grid;place-items:center;background:rgba(10,16,41,.72);font-weight:600;font-size:13px}
+
+.meta{padding:11px 13px 13px;display:grid;gap:5px}
+.sec{font-family:var(--display);font-weight:800;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--hue-ink)}
+.card h3{margin:0;font-family:var(--display);font-stretch:88%;font-weight:750;font-size:17px;line-height:1.15;text-wrap:balance;overflow-wrap:anywhere}
+.card h3 .yr{font-weight:500;color:var(--muted)}
+.when{font-family:var(--mono);font-size:12px;color:var(--ink);font-variant-numeric:tabular-nums}
+.where{font-size:12.5px;color:var(--muted);margin-top:-3px}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:3px}
+.tags:empty{display:none}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;font-size:11.5px;font-weight:700;line-height:1.35;border:1px solid transparent;white-space:nowrap}
+.tag.badge{background:var(--indigo);color:var(--ink)}
+.tag.tobuy{background:var(--sun);color:var(--on-light)}
+button.tag.tobuy{position:relative;z-index:3;cursor:pointer;border:0;font-family:inherit}
+button.tag.tobuy:hover::after{content:" · mark bought";font-weight:600}
+.tag.bought{background:var(--cyan);color:var(--on-light)}
+.tag.maybe{border-color:var(--duo);color:var(--duo)}
+.tag.xtra{border-color:var(--line);color:var(--muted);font-weight:600}
+.tag.clash{background:rgba(240,70,110,.16);border-color:var(--rose);color:#ff9bb3;white-space:normal}
+.tag.dup{border-color:var(--line);color:var(--muted);font-weight:600;border-style:dashed}
+.note{margin:2px 0 0;font-size:12.5px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.hit{position:absolute;inset:0;z-index:2;border:0;background:transparent;cursor:pointer;border-radius:var(--r)}
+.hit:focus-visible{outline-offset:3px}
+
+.slot{aspect-ratio:3/2;max-width:100%;display:grid;place-content:center;justify-items:center;gap:2px;border:1.5px dashed var(--line);border-radius:var(--r);background:transparent;color:var(--muted);font-weight:600;font-size:13px;cursor:pointer;padding:10px;text-align:center}
+.slot .plus{font-family:var(--display);font-size:30px;line-height:1;font-weight:500;color:var(--cyan)}
+.slot small{font-weight:500;color:var(--faint);font-size:12px}
+.slot:hover{border-color:var(--cyan);color:var(--ink)}
+.emptynote{margin:0;align-self:center;color:var(--faint);font-size:13.5px;padding-block:8px}
+
+.foot{padding-block:8px 56px;color:var(--faint);font-size:12.5px;display:flex;flex-wrap:wrap;gap:6px 18px;border-top:1px solid var(--line)}
+.foot a{color:var(--muted)}
+
+/* Drag a card to another day */
+.card.draggable{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.card img{-webkit-user-drag:none}
+.card.dragging{opacity:.3}
+.card.ghost{position:fixed;left:0;top:0;z-index:60;margin:0;pointer-events:none;opacity:.95;transition:none;box-shadow:0 18px 44px rgba(0,0,0,.55);border-color:var(--sun)}
+body.is-dragging,body.is-dragging *{cursor:grabbing!important}
+body.is-dragging{-webkit-user-select:none;user-select:none}
+body.is-dragging .day:not(.drop-on){opacity:.85}
+.drop-label{position:absolute;right:12px;top:10px;z-index:5;background:var(--sun);color:var(--on-light);font-weight:800;font-size:12px;letter-spacing:.04em;padding:4px 10px;border-radius:999px;pointer-events:none}
+
+/* Undecided split card */
+.card.split{grid-column:span 2;border-color:rgba(251,189,46,.75)}
+.card.split:hover{transform:none;border-color:var(--sun)}
+.pic.spic{aspect-ratio:3.1/1}
+.half{position:absolute;inset:0;background:var(--deep)}
+.half.ha{clip-path:polygon(0 0,100% 0,0 100%)}
+.half.hb{clip-path:polygon(100% 0,100% 100%,0 100%)}
+.half.blank{background:var(--hue)}
+.half.blank.same{filter:brightness(.8)}
+.half .ht{display:none;position:absolute;max-width:48%;font-family:var(--display);font-stretch:68%;font-weight:850;font-size:clamp(15px,2vw,23px);line-height:.95;text-transform:uppercase;color:var(--on-hue);text-wrap:balance;overflow-wrap:anywhere}
+.half.blank .ht{display:block}
+.half.ha .ht{left:14px;top:12px}
+.half.hb .ht{right:14px;bottom:12px;text-align:right}
+.slash{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none}
+.slash line{stroke:var(--panel);stroke-width:6}
+.orb{position:absolute;left:50%;top:50%;z-index:4;transform:translate(-50%,-50%) rotate(-8deg);width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--sun);color:var(--on-light);font-family:var(--display);font-weight:900;font-size:15px;border:2px solid var(--on-light)}
+.sec.und{color:var(--sun)}
+.opts2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px 18px}
+.opt{display:grid;gap:4px;align-content:start;justify-items:start;min-width:0}
+.opt.right{text-align:right;justify-items:end}
+.opt.right .tags{justify-content:flex-end}
+.opt-t{all:unset;cursor:pointer;font-family:var(--display);font-stretch:88%;font-weight:750;font-size:17px;line-height:1.15;color:var(--ink);overflow-wrap:anywhere}
+.opt-t .yr{font-weight:500;color:var(--muted)}
+.opt-t:hover{text-decoration:underline}
+.opt-t:focus-visible{outline:2px solid var(--sun);outline-offset:2px;border-radius:4px}
+.pick{margin-top:4px;border:1px solid var(--sun);background:transparent;color:var(--sun);font-weight:700;font-size:12.5px;padding:5px 12px;border-radius:999px;cursor:pointer}
+.pick:hover{background:var(--sun);color:var(--on-light)}
+.pickc{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:10px}
+.pickc .btn{padding:6px 12px;font-size:13px}
+.pickc .btn.yes{background:var(--sun);border-color:var(--sun);color:var(--on-light)}
+
+/* Share image */
+.share{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:28px 44px;align-items:start;padding-block:40px 56px;border-top:1px solid var(--line);scroll-margin-top:72px}
+.share-copy{display:grid;gap:14px;align-content:start}
+.share-copy .eyebrow{margin:0}
+.share h2{margin:0;font-family:var(--display);font-stretch:78%;font-weight:850;font-size:clamp(34px,4.6vw,52px);line-height:.92;text-transform:uppercase;text-wrap:balance}
+.share-copy p{margin:0;color:var(--muted);max-width:42ch}
+.chk{display:flex;align-items:center;gap:10px;font-weight:600;cursor:pointer;width:max-content}
+.chk input{width:18px;height:18px;padding:0;accent-color:var(--sun)}
+.share .add{justify-self:start}
+.add:disabled{opacity:.5;cursor:default;filter:none}
+.hint{font-size:13px}
+.hint:empty{display:none}
+.share-fig{margin:0;display:grid;gap:8px;justify-items:center;min-width:0}
+.share-fig img.tall{max-width:380px}
+.share-fig img{width:100%;max-width:100%;height:auto;border-radius:12px;border:1px solid var(--line);background:var(--deep)}
+.share-ph.tall{aspect-ratio:1290/2796;max-width:380px}
+.share-ph{width:100%;max-width:100%;aspect-ratio:16/9;display:grid;place-items:center;border:1.5px dashed var(--line);border-radius:12px;color:var(--faint);font-size:14px;text-align:center;padding:16px}
+.share-fig figcaption{font-family:var(--mono);font-size:12px;color:var(--faint)}
+#shareBtn{flex:none}
+@media (max-width:720px){ .share{grid-template-columns:minmax(0,1fr)} }
+
+/* Everyone's schedules */
+h1 .who{color:inherit}
+.brand{display:flex;flex-wrap:wrap;align-items:center;gap:14px 34px;margin:0}
+.brand img{display:block;height:auto;max-width:100%}
+.brand .lg14{width:clamp(190px,27vw,320px)}
+.brand .lggt{width:clamp(180px,25vw,300px)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+h1 .who.other{display:block;font-size:.48em;line-height:1.1;color:var(--sun);text-transform:none;overflow-wrap:anywhere;margin-bottom:.15em}
+.crew{display:flex;align-items:center;gap:10px;margin-top:16px;min-width:0}
+.crew-l{flex:none;font-family:var(--display);font-weight:800;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.crew-list{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;min-width:0;padding-block:2px}
+.crew-list::-webkit-scrollbar{display:none}
+.pchip{flex:none;display:inline-flex;align-items:center;gap:7px;padding:4px 12px 4px 4px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink);font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
+.pchip .av{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11.5px;font-weight:800;color:var(--on-light);background:var(--c,var(--cyan))}
+.pchip b{font-family:var(--mono);font-weight:500;font-size:11.5px;color:var(--faint)}
+.pchip:hover{border-color:var(--faint)}
+.pchip[aria-pressed="true"]{background:var(--ink);color:var(--on-light);border-color:var(--ink)}
+.pchip[aria-pressed="true"] b{color:var(--on-light);opacity:.6}
+.viewnote{margin:10px 0 0;font-size:13.5px;color:var(--sun);display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
+.viewnote button{border:1px solid var(--sun);background:transparent;color:var(--sun);font-weight:700;font-size:12.5px;padding:4px 12px;border-radius:999px;cursor:pointer}
+.tag.with{border-color:rgba(82,182,239,.6);color:var(--duo);font-weight:600;white-space:normal}
+.tag.gone{background:rgba(240,70,110,.16);border-color:var(--rose);color:#ff9bb3;white-space:normal}
+.mine{position:relative;z-index:3;justify-self:start;margin-top:4px;border:1px solid var(--cyan);background:transparent;color:var(--cyan);font-weight:700;font-size:12px;padding:4px 11px;border-radius:999px;cursor:pointer}
+.mine:hover{background:var(--cyan);color:var(--on-light)}
+.mine.on{border-color:var(--line);color:var(--muted);cursor:default}
+.mine.on:hover{background:transparent;color:var(--muted)}
+
+/* Festival schedule browser */
+dialog.catd{width:min(780px,calc(100vw - 24px));height:min(880px,calc(100dvh - 24px));overflow:hidden}
+.cat{display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;height:100%;min-height:0}
+.cat-h{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 20px 8px}
+.cat-h h2{margin:0;font-family:var(--display);font-stretch:80%;font-weight:850;font-size:26px;text-transform:uppercase}
+.cat-sub{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+.cat-tools{display:grid;gap:10px;padding:4px 20px 12px;border-bottom:1px solid var(--line);min-width:0}
+.cat-days{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;min-width:0}
+.cat-days::-webkit-scrollbar{display:none}
+.cday{flex:none;display:grid;justify-items:center;padding:6px 10px 5px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;min-width:52px}
+.cday b{font-family:var(--display);font-stretch:62%;font-weight:900;font-size:22px;line-height:1.05;color:var(--ink)}
+.cday small{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.cday .dot{width:5px;height:5px;border-radius:50%;background:var(--cyan);margin-top:2px}
+.cday .dot.off{visibility:hidden}
+.cday[aria-pressed="true"]{background:var(--sun);border-color:var(--sun);color:var(--on-light)}
+.cday[aria-pressed="true"] b{color:var(--on-light)}
+.cday[aria-pressed="true"] .dot{background:var(--on-light)}
+.cat-list{overflow:auto;padding:0 20px 12px;min-height:0;overscroll-behavior:contain}
+.cgroup{margin:16px 0 2px;font-family:var(--display);font-weight:800;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan)}
+.crow{display:grid;grid-template-columns:76px minmax(0,1fr) auto;gap:12px;align-items:start;padding:13px 0;border-bottom:1px solid rgba(38,52,108,.7)}
+.crow.in .ct{color:var(--sun)}
+.ct{font-family:var(--mono);font-size:13px;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.35}
+.ct small{display:block;color:var(--faint);font-size:11.5px}
+.cm{display:grid;gap:3px;min-width:0;justify-items:start}
+.cs{font-family:var(--display);font-weight:800;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--hue-ink)}
+.cn{font-family:var(--display);font-stretch:88%;font-weight:750;font-size:16.5px;line-height:1.2;overflow-wrap:anywhere}
+.cn .yr{font-weight:500;color:var(--muted)}
+.cv{font-size:12.5px;color:var(--muted)}
+.cwarn{font-size:12.5px;color:#ff9bb3}
+.cfr{font-size:12.5px;color:var(--duo)}
+.clog{margin:2px 0 0;font-size:13px;color:var(--muted);line-height:1.5;white-space:pre-line;max-width:60ch}
+.cmore{all:unset;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--cyan)}
+.cmore:focus-visible{outline:2px solid var(--sun);border-radius:4px}
+.cadd{border:0;background:var(--sun);color:var(--on-light);font-weight:800;font-size:13px;padding:7px 14px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.cadd.on{background:transparent;color:var(--sun);border:1px solid var(--sun)}
+.cadd:disabled{opacity:.55;cursor:default}
+.cat-empty{padding:34px 0;text-align:center;color:var(--faint)}
+.cat-f{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;padding:12px 20px;border-top:1px solid var(--line);font-size:12.5px;color:var(--faint)}
+#customFields{display:grid;gap:14px}
+@media (max-width:560px){ .crow{grid-template-columns:60px minmax(0,1fr)} .crow .cadd{grid-column:2;justify-self:start} .cat-h,.cat-tools,.cat-list,.cat-f{padding-left:14px;padding-right:14px} }
+
+/* Dialog */
+dialog{width:min(600px,calc(100vw - 24px));max-height:calc(100dvh - 24px);padding:0;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--ink);overflow:auto}
+dialog::backdrop{background:rgba(4,8,24,.72);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.dlg{display:grid;gap:14px;padding:18px 20px 20px}
+.dlg-h{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.dlg-h h2{margin:0;font-family:var(--display);font-stretch:80%;font-weight:850;font-size:26px;text-transform:uppercase;letter-spacing:.01em}
+.x{border:0;background:transparent;color:var(--muted);font-size:26px;line-height:1;cursor:pointer;padding:4px 8px;border-radius:8px}
+.x:hover{color:var(--ink)}
+.drop{position:relative;aspect-ratio:3/2;width:100%;max-width:100%;border:1.5px dashed var(--line);border-radius:12px;background:var(--deep);display:grid;place-items:center;overflow:hidden;cursor:pointer}
+.drop.has{border-style:solid;border-color:var(--cyan)}
+.drop.drag{border-color:var(--sun);background:rgba(251,189,46,.06)}
+.drop img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:var(--pos,50% 50%)}
+.drop.whole img{object-fit:contain}
+.drop-hint{display:grid;gap:2px;text-align:center;color:var(--muted);font-size:13px;padding:12px}
+.drop-hint strong{color:var(--ink);font-size:15px}
+.drop-busy{position:absolute;inset:0;display:grid;place-items:center;background:rgba(10,16,41,.7);font-weight:600}
+.drop-actions{display:flex;flex-wrap:wrap;gap:4px 16px}
+.imgrow{display:grid;grid-template-columns:minmax(0,290px) minmax(0,1fr);gap:16px;align-items:start}
+.imgctl{display:grid;gap:12px;align-content:start;min-width:0}
+input[type="range"]{padding:0;border:0;background:transparent;box-shadow:none;accent-color:var(--sun);height:28px}
+.posends{display:flex;justify-content:space-between;font-size:12px;color:var(--faint);margin-top:-4px}
+.lnk{border:0;background:transparent;color:var(--cyan);font-weight:600;font-size:13px;cursor:pointer;padding:2px 0}
+.lnk:hover{text-decoration:underline}
+.lnk.danger{color:var(--rose)}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:12px}
+.grid3{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr);gap:12px}
+.f{display:grid;gap:5px;min-width:0}
+.f > span,legend{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.f em{font-style:normal;font-weight:500;text-transform:none;letter-spacing:0;color:var(--faint)}
+input,select,textarea{width:100%;min-width:0;font:inherit;font-size:15px;color:var(--ink);background:var(--deep);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(20,178,220,.2)}
+textarea{resize:vertical;min-height:70px}
+input::placeholder,textarea::placeholder{color:var(--faint)}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+legend{padding:0;margin-bottom:6px}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opts label{position:relative}
+.opts input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.opts span{display:inline-block;padding:7px 12px;border:1px solid var(--line);border-radius:999px;font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer}
+.opts span:hover{color:var(--ink);border-color:var(--faint)}
+.opts input:checked + span{background:var(--cyan);border-color:var(--cyan);color:var(--on-light)}
+.opts input:focus-visible + span{outline:2px solid var(--sun);outline-offset:2px}
+.opts input:disabled + span{opacity:.4;cursor:not-allowed}
+.fhint{margin:8px 0 0;font-size:12.5px;color:var(--muted)}
+.fhint:empty{display:none}
+.row-opts{display:grid;grid-template-columns:auto auto;justify-content:start;gap:14px 26px}
+.info{border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--muted);display:grid;gap:3px}
+.info b{color:var(--ink);font-weight:600}
+.dlg-f{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:4px}
+.dlg-f .sp{flex:1}
+.err{color:#ff9bb3;font-size:13px;flex-basis:100%}
+.err:empty{display:none}
+.btn{padding:10px 18px;border-radius:999px;border:1px solid var(--line);background:transparent;font-weight:700;font-size:14px;cursor:pointer}
+.btn:hover{border-color:var(--faint)}
+.btn.primary{background:var(--sun);border-color:var(--sun);color:var(--on-light)}
+.btn.primary:disabled{opacity:.55;cursor:default}
+.btn.danger{color:var(--rose);border-color:transparent;padding-inline:4px}
+.confirm{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink)}
+.confirm .btn{padding:7px 12px}
+.confirm .btn.yes{background:var(--rose);border-color:var(--rose);color:#fff}
+
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:40;max-width:calc(100vw - 32px);background:var(--panel-2);border:1px solid var(--line);color:var(--ink);padding:10px 16px;border-radius:12px;font-size:14px;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+
+@media (max-width:720px){
+  .day{grid-template-columns:minmax(0,1fr);gap:14px;padding-block:20px}
+  .date{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"dn mo st" "dn wd st" "dn sum ad";column-gap:12px;align-items:end;justify-items:start}
+  .dadd{margin-top:0;justify-self:end;padding:0}
+  .dn{font-size:60px}
+  .wd{margin-top:0}
+  .sum{margin-top:2px}
+  .dstat,.dlabel{margin-top:0;justify-self:end;align-self:start}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .card h3{font-size:15.5px}
+  .sticker{width:32px;height:32px;top:-10px;right:-8px}
+  .grid3{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .grid3 .f:first-child{grid-column:1 / -1}
+  .row-opts{grid-template-columns:minmax(0,1fr)}
+  .imgrow{grid-template-columns:minmax(0,1fr)}
+  .add .long{display:none}
+}
+@media (max-width:420px){
+  .pill .ph-only{display:none}
+  .dstat button{padding:6px 8px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important}
+  .card:hover{transform:none}
+}
+
+/* Backup (this copy saves in the browser only) */
+.backup{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px 44px;align-items:end;padding-block:36px 44px;border-top:1px solid var(--line)}
+.bk-copy{display:grid;gap:12px}
+.bk-copy .eyebrow{margin:0}
+.backup h2{margin:0;font-family:var(--display);font-stretch:78%;font-weight:850;font-size:clamp(28px,3.6vw,40px);line-height:.92;text-transform:uppercase;text-wrap:balance}
+.bk-copy p{margin:0;color:var(--muted);max-width:62ch}
+.bk-act{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:10px}
+.bk-act .chip{padding:9px 16px;font-size:14px}
+.bk-msg{flex-basis:100%;display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;font-size:13px;color:var(--muted);text-align:right}
+.bk-msg:empty{display:none}
+.bk-msg .warn{color:var(--rose)}
+.bk-msg .btn{padding:6px 12px;font-size:13px}
+.bk-msg .btn.yes{background:var(--rose);border-color:var(--rose);color:#fff}
+@media (max-width:720px){.backup{grid-template-columns:minmax(0,1fr);align-items:start}.bk-act,.bk-msg{justify-content:flex-start;text-align:left}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <h1 class="brand"><img class="lg14" src="logos/qc14.png" alt="QCinema International Film Festival, 14th edition" width="358" height="112"><img class="lggt" src="logos/genreteurs.png" alt="Genre'teurs" width="428" height="128"><span class="sr"><span id="whoTitle">My</span> QCinema 2026 schedule</span></h1>
+    <p class="status" id="status"><span>Loading your schedule…</span></p>
+    <div class="crew" id="crew" hidden><span class="crew-l">Schedules</span><div class="crew-list" id="crewList"></div></div>
+    <p class="viewnote" id="viewNote" hidden></p>
+    <p class="legend"><span class="k">★</span> full colour = going · <span class="b">blue tint</span> = maybe · dashed white = outside QCinema · split card = undecided · drag a card to another day to move it (long-press on phones) · drop a poster on a card to add it</p>
+  </div>
+</header>
+
+<div class="bar">
+  <div class="wrap bar-in">
+    <div class="filters" id="filters" role="group" aria-label="Show">
+      <button type="button" class="chip" data-f="all" aria-pressed="true">All <b data-c="all">0</b></button>
+      <button type="button" class="chip" data-f="going" aria-pressed="false">★ Going <b data-c="going">0</b></button>
+      <button type="button" class="chip" data-f="maybe" aria-pressed="false">☆ Maybe <b data-c="maybe">0</b></button>
+      <button type="button" class="chip" data-f="badge" aria-pressed="false">🎫 Badge <b data-c="badge">0</b></button>
+      <button type="button" class="chip" data-f="tobuy" aria-pressed="false">💵 To buy <b data-c="tobuy">0</b></button>
+      <button type="button" class="chip" data-f="bought" aria-pressed="false">✓ Bought <b data-c="bought">0</b></button>
+      <button type="button" class="chip" data-f="outside" aria-pressed="false">Outside QCinema <b data-c="outside">0</b></button>
+    </div>
+    <button type="button" class="chip" id="shareBtn">Share image</button>
+    <button type="button" class="add" id="addBtn">+ Add<span class="long"> from schedule</span></button>
+  </div>
+</div>
+
+<main class="wrap days" id="days"></main>
+
+<section class="wrap share" id="share" aria-labelledby="shareTitle">
+  <div class="share-copy">
+    <h2 id="shareTitle">Export as Image</h2>
+    <p>Every day you're going on one picture: a 16:9 post for X, or an iPhone lock-screen wallpaper that leaves the top clear for the clock. Your handle goes in the header, and 🎫 or 💵 marks your ticket status. It updates whenever the schedule above changes.</p>
+    <fieldset><legend>Size</legend><div class="opts">
+      <label><input type="radio" name="shfmt" value="x"><span>X post · 1600 × 900</span></label>
+      <label><input type="radio" name="shfmt" value="phone"><span>iPhone wallpaper · 1290 × 2796</span></label>
+    </div></fieldset>
+    <label class="chk"><input type="checkbox" id="shMaybe"> Include maybes</label>
+    <label class="f"><span>Your handle <em>shown on the image</em></span><input id="shHandle" maxlength="32" placeholder="@yourhandle" autocomplete="off"></label>
+    <button type="button" class="add" id="shSave" disabled>Save image</button>
+    <p class="hint" id="shHint" role="status"></p>
+  </div>
+  <figure class="share-fig">
+    <div class="share-ph" id="shPh">Building your image…</div>
+    <img id="shImg" alt="Your QCinema 2026 schedule as one image" hidden>
+    <figcaption id="shCap"></figcaption>
+  </figure>
+</section>
+
+<section class="wrap backup" aria-labelledby="bkTitle">
+  <div class="bk-copy">
+    <p class="eyebrow">Saved on this device</p>
+    <h2 id="bkTitle">Back up your plan</h2>
+    <p>Your schedule and posters are stored in this browser only. To put them on your phone or another browser, export a backup here, then import that file there. Clearing this site's data deletes them, and Safari can clear it if you don't open the site for a week, so export a fresh copy after big changes.</p>
+  </div>
+  <div class="bk-act">
+    <button type="button" class="add" id="bkExport">Export backup</button>
+    <button type="button" class="chip" id="bkImport">Import backup</button>
+    <input type="file" id="bkFile" accept=".json,application/json" hidden>
+    <div class="bk-msg" id="bkMsg" role="status"></div>
+  </div>
+</section>
+
+<footer class="wrap foot">
+  <span>Times are Philippine time (UTC+8). <span id="catAsOf"></span> Schedules can change, so check the festival's guide before you travel.</span>
+  <a href="https://qcinema.ph/interactive" target="_blank" rel="noopener">qcinema.ph/interactive</a>
+</footer>
+
+<dialog id="dlg" aria-labelledby="dlgTitle">
+  <form class="dlg" id="form" novalidate>
+    <div class="dlg-h">
+      <h2 id="dlgTitle">Add a film</h2>
+      <button type="button" class="x" id="closeBtn" aria-label="Close">×</button>
+    </div>
+
+    <div class="imgrow" id="imgrow">
+      <div class="drop" id="drop" tabindex="0" role="button" aria-label="Add a poster or still">
+        <img id="prev" alt="" hidden>
+        <div class="drop-hint" id="dropHint"><strong>Add a poster or still</strong><span>Drop an image here, paste it, or click to choose one</span></div>
+        <div class="drop-busy" id="dropBusy" hidden>Uploading…</div>
+      </div>
+      <div class="imgctl">
+        <div class="drop-actions"><button type="button" class="lnk" id="pickImg">Choose image</button><button type="button" class="lnk danger" id="removeImg" hidden>Remove image</button></div>
+        <fieldset id="fitSet" hidden><legend>Image fit</legend><div class="opts">
+          <label><input type="radio" name="fit" value="fill"><span>Fill the frame</span></label>
+          <label><input type="radio" name="fit" value="whole"><span>Show the whole image</span></label>
+        </div></fieldset>
+        <div class="f" id="posWrap" hidden>
+          <span>Crop position</span>
+          <input type="range" id="fPos" min="0" max="100" step="1" value="50" aria-label="Crop position">
+          <div class="posends" aria-hidden="true"><span id="posA">Top</span><span id="posB">Bottom</span></div>
+        </div>
+      </div>
+    </div>
+    <input type="file" id="file" accept="image/*" hidden>
+
+    <div id="catFields" hidden>
+      <label class="f"><span>Screening <em>other screenings of this film</em></span><select id="fSid"></select></label>
+    </div>
+    <div id="customFields">
+    <div class="grid2">
+      <label class="f"><span>Title</span><input id="fTitle" maxlength="140" placeholder="Fjord" autocomplete="off"></label>
+      <label class="f"><span>Year</span><input id="fYear" inputmode="numeric" maxlength="4" placeholder="2026" autocomplete="off"></label>
+    </div>
+
+    <div class="grid3">
+      <label class="f"><span>Day</span><select id="fDay"></select></label>
+      <label class="f"><span>Starts <em>optional</em></span><input type="time" id="fTime"></label>
+      <label class="f"><span>Ends <em>optional</em></span><input type="time" id="fEnd"></label>
+    </div>
+
+    <label class="f"><span>Venue <em>optional</em></span><input id="fVenue" maxlength="120" placeholder="Cinema 16, Gateway 2" autocomplete="off"></label>
+    </div>
+
+    <div class="row-opts">
+      <fieldset id="kindSet"><legend>Type</legend><div class="opts">
+        <label><input type="radio" name="kind" value="film"><span>Film</span></label>
+        <label><input type="radio" name="kind" value="talk"><span>Talk / event</span></label>
+        <label><input type="radio" name="kind" value="outside"><span>Outside QCinema</span></label>
+      </div></fieldset>
+      <fieldset><legend>Plan</legend><div class="opts">
+        <label><input type="radio" name="plan" value="going"><span>★ Going</span></label>
+        <label><input type="radio" name="plan" value="maybe"><span>☆ Maybe</span></label>
+      </div></fieldset>
+    </div>
+
+    <label class="f"><span>Undecided between this and <em>optional, shows both as one split card</em></span><select id="fOr"><option value="">Not undecided</option></select></label>
+
+    <fieldset><legend>Ticket</legend><div class="opts">
+      <label><input type="radio" name="ticket" value=""><span>Not set</span></label>
+      <label><input type="radio" name="ticket" value="badge" id="tBadge"><span id="tBadgeLbl">🎫 Festival badge</span></label>
+      <label><input type="radio" name="ticket" value="tobuy"><span>💵 Ticket to buy</span></label>
+      <label><input type="radio" name="ticket" value="bought"><span>✓ Bought</span></label>
+    </div><p class="fhint" id="badgeHint"></p></fieldset>
+
+    <label class="f"><span>Notes</span><textarea id="fNotes" rows="3" maxlength="800" placeholder="Seat, who you're going with, what to catch after"></textarea></label>
+
+    <div class="info" id="info" hidden></div>
+
+    <div class="dlg-f">
+      <button type="button" class="btn danger" id="delBtn">Delete</button>
+      <span class="confirm" id="delConfirm" hidden>Remove from your schedule? <button type="button" class="btn yes" id="delYes">Remove</button><button type="button" class="btn" id="delNo">Keep</button></span>
+      <span class="sp"></span>
+      <button type="button" class="btn" id="cancelBtn">Cancel</button>
+      <button type="submit" class="btn primary" id="saveBtn">Save</button>
+      <p class="err" id="err" role="alert"></p>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="cat" class="catd" aria-labelledby="catTitle">
+  <div class="cat">
+    <div class="cat-h">
+      <div><h2 id="catTitle">Festival schedule</h2><p class="cat-sub" id="catSub"></p></div>
+      <button type="button" class="x" id="catClose" aria-label="Close">×</button>
+    </div>
+    <div class="cat-tools">
+      <input type="search" id="catQ" placeholder="Search films, directors, sections, cinemas" autocomplete="off" aria-label="Search the festival schedule">
+      <div class="cat-days" id="catDays" role="group" aria-label="Festival day"></div>
+    </div>
+    <div class="cat-list" id="catList"></div>
+    <div class="cat-f"><span id="catNote"></span><button type="button" class="lnk" id="catCustom">Not on the list? Add your own film or talk</button></div>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const WDL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const DAYS = Array.from({length:10}, (_, i) => { const d = 13 + i; const w = new Date(2026, 10, d).getDay(); return { id: `2026-11-${d}`, d, wd: WD[w], wdl: WDL[w] }; });
+  const DAY_LABEL = { attending: 'Going', tbc: 'For confirmation', skip: 'Skipping' };
+  const BADGE_MAX = 10;
+  const STAR_FULL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8l3.05 6.4 7 .86-5.15 4.85 1.33 6.95L12 17.5l-6.23 3.36 1.33-6.95L1.95 9.06l7-.86z" fill="#fbbd2e" stroke="#071433" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9.6" cy="11.4" r=".95" fill="#071433"/><circle cx="14.4" cy="11.4" r=".95" fill="#071433"/><path d="M10.2 13.6c.9.9 2.7.9 3.6 0" fill="none" stroke="#071433" stroke-width="1.1" stroke-linecap="round"/></svg>';
+  const HUES = { 'Screen International':'cyan', 'Asian Next Wave':'sun', 'Rediscovery':'rose', 'New Horizons':'blue', 'QC Selects':'sun', 'Before Midnight':'indigo', 'RainbowQC':'rose', 'Dokyu Days':'cyan', 'QCShorts International':'blue' };
+  const HUE_LIST = ['cyan','sun','rose','blue'];
+
+  let db = null, assets = null, canWrite = false, userNs = null;
+  let films = [], dayStatus = {}, filter = 'all';
+  let loadedFilms = false;
+  // Everyone's plan lives at plans/<their id>: items (screenings or custom entries) and days.
+  let me = null, viewing = null, writable = false;
+  const people = new Map();   // uid -> plan doc { handle, isOwner }
+  const plans = new Map();    // uid -> { items: Map(id -> data), days: {}, unsub: [] }
+  const posters = new Map();  // filmId -> shared poster image
+  const names = new Map();    // uid -> profile name
+  let withAll = new Map();    // sid -> [uid] who picked that screening
+  const CAT = { ready: false, ev: new Map(), films: new Map(), byFilm: new Map(), byDay: new Map(), fetchedAt: '' };
+  const cardCache = new Map();
+  const rows = {};
+
+  function h(tag, props, ...kids) {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(props || {})) {
+      if (v == null || v === false) continue;
+      if (k === 'class') el.className = v;
+      else if (k === 'text') el.textContent = v;
+      else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? '' : v);
+    }
+    for (const c of kids.flat()) { if (c == null || c === false) continue; el.append(c.nodeType ? c : document.createTextNode(c)); }
+    return el;
+  }
+  const toMin = t => { const m = /^(\d{1,2}):(\d{2})/.exec(t || ''); return m ? (+m[1]) * 60 + (+m[2]) : null; };
+  function fmt12(t) { const m = toMin(t); if (m == null) return ''; let H = Math.floor(m / 60) % 24; const ap = H >= 12 ? 'PM' : 'AM'; H = H % 12 || 12; return `${H}:${String(m % 60).padStart(2, '0')} ${ap}`; }
+  function fmtRange(a, b) {
+    if (!a) return '';
+    if (!b) return fmt12(a);
+    const A = fmt12(a), B = fmt12(b);
+    return A.slice(-2) === B.slice(-2) ? `${A.slice(0, -3)}–${B}` : `${A}–${B}`;
+  }
+  const hueFor = f => f.kind === 'outside' ? 'paper' : f.kind === 'talk' ? 'rose' : (HUES[f.section] || HUE_LIST[[...(f.title || 'x')].reduce((a, c) => a + c.charCodeAt(0), 0) % 4]);
+  const dayOf = id => DAYS.find(d => d.id === id);
+  const shortDay = id => { const d = dayOf(id); return d ? `${d.wd}, Nov ${d.d}` : id; };
+  const norm = s => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const isTall = im => !(im && im.w && im.h) || im.w / im.h < 1.5;
+  function posFor(im) { const p = Math.max(0, Math.min(100, im && im.pos != null ? +im.pos : 50)); return isTall(im) ? `50% ${p}%` : `${p}% 50%`; }
+
+  let toastTimer;
+  function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, 4200); }
+  function dbMsg(e) {
+    switch (e && e.code) {
+      case 'quota_exceeded': return "This browser's storage is full. Remove a few images or entries, then try again.";
+      case 'resource_exhausted': return 'Too many changes at once. Wait a moment and try again.';
+      case 'invalid_argument': return 'That change was refused. You may only have view access to this schedule.';
+      case 'revoked': return 'Your access to this schedule changed. Reload the page to continue.';
+      case 'no_storage': return "This browser is blocking site storage, so changes can't be saved. Leave private browsing or allow site data, then reload.";
+      default: return "Couldn't save that change in this browser. Try again.";
+    }
+  }
+  function upMsg(e) {
+    switch (e && e.code) {
+      case 'too_large': return 'That image is too large. Try one under 20 MB.';
+      case 'unsupported_type': return 'Use a JPG, PNG, WebP or GIF image.';
+      case 'quota_or_state': return "This browser's image storage is full. Remove some images first.";
+      case 'rate_limited': return 'Too many uploads at once. Wait a moment, then try again.';
+      case 'decode': return "That file isn't an image this browser can open. Try a JPG or PNG.";
+      default: return "Couldn't save that image. Try again.";
+    }
+  }
+
+  /* ---------- image prep + upload ---------- */
+  async function decode(file) {
+    if ('createImageBitmap' in window) { try { return await createImageBitmap(file); } catch (_) {} }
+    return await new Promise((res, rej) => {
+      const u = URL.createObjectURL(file); const im = new Image();
+      im.onload = () => res(im); im.onerror = () => { URL.revokeObjectURL(u); rej({ code: 'decode' }); }; im.src = u;
+    });
+  }
+  async function prepImage(file) {
+    const src = await decode(file);
+    const w0 = src.width || src.naturalWidth, h0 = src.height || src.naturalHeight;
+    if (!w0 || !h0) throw { code: 'decode' };
+    const s = Math.min(1, 1600 / Math.max(w0, h0));
+    const w = Math.round(w0 * s), hh = Math.round(h0 * s);
+    const c = document.createElement('canvas'); c.width = w; c.height = hh;
+    const ctx = c.getContext('2d'); ctx.fillStyle = '#0a1029'; ctx.fillRect(0, 0, w, hh); ctx.drawImage(src, 0, 0, w, hh);
+    const blob = await new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej({ code: 'decode' }), 'image/jpeg', 0.86));
+    return { blob, w, h: hh };
+  }
+  async function uploadImage(file) {
+    if (!assets) throw { code: 'not_granted' };
+    const { blob, w, h: hh } = await prepImage(file);
+    const res = await assets.upload(blob, { type: 'image/jpeg' });
+    return { id: res.id, url: res.url, w, h: hh };
+  }
+  const imgSrc = id => (assets && id && assets.src(id)) || '';
+  const dropAsset = id => { if (id && assets) assets.delete(id).catch(() => {}); };
+  const imageFromTransfer = dt => {
+    if (!dt) return null;
+    for (const f of dt.files || []) if (f.type.startsWith('image/')) return f;
+    for (const it of dt.items || []) if (it.kind === 'file' && it.type.startsWith('image/')) { const f = it.getAsFile(); if (f) return f; }
+    return null;
+  };
+  const hasFiles = e => e.dataTransfer && [...(e.dataTransfer.types || [])].includes('Files');
+
+  /* ---------- festival catalog (schedule.json, a snapshot of qcinema.ph/interactive) ---------- */
+  function shortVenue(v) {
+    const m = /^(Cinema \d+), (.+)$/.exec(v || ''); if (!m) return v || '';
+    return `${m[1]} · ${m[2].replace('Ayala Malls Cinemas TriNoma', 'Ayala Malls TriNoma').replace('Fisher Box Office, Fisher Mall', 'Fisher Mall').replace('Robinsons Movieworld Galleria', 'Robinsons Galleria')}`;
+  }
+  function cleanTitle(t) {
+    const m = /^focus on ([^:]+):\s*(.+)$/i.exec(t || '');
+    return m ? { title: m[2], focus: 'Focus on ' + m[1].replace(/\b\w/g, c => c.toUpperCase()) } : { title: t || '', focus: '' };
+  }
+  async function loadCatalog() {
+    try {
+      const r = await fetch('schedule.json', { cache: 'no-cache' }); if (!r.ok) throw new Error(String(r.status));
+      const j = await r.json();
+      for (const [id, a] of Object.entries(j.films || {})) {
+        const ct = cleanTitle(a[0]);
+        CAT.films.set(id, { id, title: ct.title, focus: ct.focus, program: a[1], director: a[2], year: a[3] ? String(a[3]) : '', mins: a[4], countries: a[5], premiere: a[6], logline: a[7], genres: a[8] });
+      }
+      for (const e of j.ev || []) {
+        const [sid, filmId, md, start, end, vi, fl, guests] = e;
+        const ev = { sid, filmId, date: '2026-' + md, start, end, venue: shortVenue((j.venues || [])[vi]), q: fl.includes('q'), free: fl.includes('f'), gala: fl.includes('g'), invite: fl.includes('i'), guests: guests || '' };
+        CAT.ev.set(sid, ev);
+        (CAT.byFilm.get(filmId) || CAT.byFilm.set(filmId, []).get(filmId)).push(ev);
+        (CAT.byDay.get(ev.date) || CAT.byDay.set(ev.date, []).get(ev.date)).push(ev);
+      }
+      const byTime = (a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start);
+      for (const l of CAT.byFilm.values()) l.sort(byTime);
+      for (const l of CAT.byDay.values()) l.sort(byTime);
+      CAT.fetchedAt = j.fetchedAt || ''; CAT.ready = true;
+      const d = new Date(CAT.fetchedAt);
+      $('#catAsOf').textContent = isNaN(d) ? '' : `Festival schedule as of ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.`;
+    } catch (_) { CAT.ready = false; }
+  }
+  const evExtras = (ev, fm) => [...(ev.q ? ['Q&A'] : []), ...(ev.free ? ['Free'] : []), ...(ev.gala ? ['Gala'] : []), ...(ev.invite ? ['Invite only'] : []), ...(fm && fm.focus ? [fm.focus] : [])];
+  function snapOf(sid) {
+    const ev = CAT.ev.get(sid); if (!ev) return null;
+    const fm = CAT.films.get(ev.filmId) || {};
+    return { title: fm.title || '', year: fm.year || '', day: ev.date, time: ev.start, end: ev.end, venue: ev.venue, section: fm.program || '' };
+  }
+  // A festival item stores only its screening id (sid) plus personal fields; title, time and cinema come from the catalog.
+  function resolveItem(id, it) {
+    if (it.sid) {
+      const ev = CAT.ev.get(it.sid), sn = it.snap || {};
+      const base = { id, sid: it.sid, catalog: true, kind: 'film', plan: it.plan || 'going', ticket: it.ticket || '', notes: it.notes || '', orGroup: it.orGroup || '', order: it.order ?? 0, ownImage: !!(it.image && it.image.id) };
+      if (!ev) return Object.assign(base, { title: sn.title || 'Screening', year: sn.year || '', day: sn.day || '', time: sn.time || '', end: sn.end || '', venue: sn.venue || '', section: sn.section || '', gone: CAT.ready, image: it.image || null });
+      const fm = CAT.films.get(ev.filmId) || {};
+      return Object.assign(base, { filmId: ev.filmId, title: fm.title || '', year: fm.year || '', day: ev.date, time: ev.start, end: ev.end, venue: ev.venue, section: fm.program || '', director: fm.director || '', guests: ev.guests, extras: evExtras(ev, fm), logline: fm.logline || '', image: it.image || posters.get(ev.filmId) || null });
+    }
+    return Object.assign({ id, catalog: false }, it, { image: it.image || null, ownImage: !!(it.image && it.image.id) });
+  }
+
+  /* ---------- people ---------- */
+  const planOf = uid => { if (!plans.has(uid)) plans.set(uid, { items: new Map(), days: {}, unsub: [] }); return plans.get(uid); };
+  const handleOf = uid => ((people.get(uid) || {}).handle || '').trim() || names.get(uid) || (uid === me ? 'You' : 'Someone');
+  const itemsCol = () => db.collection(`plans/${me}/items`);
+  const daysCol = () => db.collection(`plans/${me}/days`);
+  const AV = ['#14b2dc', '#fbbd2e', '#f0466e', '#3d9be6', '#a3afff'];
+  const avColor = uid => AV[[...uid].reduce((a, c) => a + c.charCodeAt(0), 0) % AV.length];
+  function watchPlan(uid) {
+    const p = planOf(uid); if (p.unsub.length || !db) return;
+    p.unsub.push(db.collection(`plans/${uid}/items`).onSnapshot(snap => {
+      p.items = new Map(snap.docs.map(d => [d.id, d.data() || {}]));
+      if (uid === viewing && !snap.metadata.fromCache) loadedFilms = true;
+      refresh();
+    }, () => { if (uid === viewing) loadedFilms = true; refresh(); }));
+    p.unsub.push(db.collection(`plans/${uid}/days`).onSnapshot(snap => {
+      const days = {}; for (const d of snap.docs) { const st = (d.data() || {}).status; if (DAY_LABEL[st]) days[d.id] = st; }
+      p.days = days; refresh();
+    }, () => {}));
+  }
+  function computeOverlap() {
+    withAll = new Map();
+    for (const [uid, p] of plans) for (const it of p.items.values()) if (it.sid) (withAll.get(it.sid) || withAll.set(it.sid, []).get(it.sid)).push(uid);
+  }
+  let refreshQueued = false;
+  function refresh() { if (refreshQueued) return; refreshQueued = true; setTimeout(() => { refreshQueued = false; doRefresh(); }, 0); }
+  function doRefresh() {
+    computeOverlap();
+    const p = viewing ? planOf(viewing) : null;
+    films = p ? [...p.items].map(([id, it]) => resolveItem(id, it)) : [];
+    dayStatus = p ? p.days : {};
+    canWrite = !!(db && me && viewing === me && writable);
+    const ab = $('#addBtn'); ab.hidden = false;
+    ab.replaceChildren(...(me && writable && db ? ['+ Add', h('span', { class: 'long', text: ' from schedule' })] : ['Festival', h('span', { class: 'long', text: ' schedule' })]));
+    render(); renderCrew();
+    if ($('#cat').open) renderCatalog();
+  }
+  function setViewing(uid) {
+    if (uid === viewing) return;
+    viewing = uid; loadedFilms = !!(plans.get(uid) && plans.get(uid).items.size);
+    try { sessionStorage.setItem('qc-view', uid); } catch (_) {}
+    cardCache.clear(); shareKey = ''; doRefresh();
+  }
+  function renderCrew() {
+    const uids = [...new Set([...(me ? [me] : []), ...people.keys()])];
+    uids.sort((a, b) => (b === me) - (a === me) || (!!(people.get(b) || {}).isOwner - !!(people.get(a) || {}).isOwner) || handleOf(a).localeCompare(handleOf(b)));
+    $('#crew').hidden = uids.length < 2;
+    $('#crewList').replaceChildren(...uids.map(u => {
+      const label = u === me ? 'You' : handleOf(u), n = (plans.get(u) || { items: new Map() }).items.size;
+      return h('button', { type: 'button', class: 'pchip', 'aria-pressed': String(u === viewing), onclick: () => setViewing(u) },
+        h('span', { class: 'av', style: `--c:${avColor(u)}`, 'aria-hidden': 'true', text: (handleOf(u).replace(/^@/, '')[0] || '?').toUpperCase() }), label, h('b', { text: String(n) }));
+    }));
+    const other = viewing && viewing !== me;
+    $('#whoTitle').textContent = other ? `${handleOf(viewing)}'s` : 'My'; $('#whoTitle').classList.toggle('other', !!other);
+    const note = $('#viewNote');
+    if (other) {
+      note.replaceChildren(h('span', { text: `You're looking at ${handleOf(viewing)}'s schedule.` }), me ? h('button', { type: 'button', onclick: () => setViewing(me) }, 'Back to mine') : null);
+      note.hidden = false;
+    } else if (db && !me) { note.replaceChildren(h('span', { text: "You can browse everyone's schedules. Sign in to claude.ai to build your own." })); note.hidden = false; }
+    else if (me && !writable) { note.replaceChildren(h('span', { text: 'Your access to this page is view-only, so you can browse but not save. Ask Angelo to give you Contributor access to build your own schedule.' })); note.hidden = false; }
+    else note.hidden = true;
+  }
+  function refused(e) {
+    if (e && e.code === 'invalid_argument') { writable = false; doRefresh(); toast("This page didn't let you save. Ask Angelo for Contributor access."); }
+    else toast(dbMsg(e));
+  }
+  async function ensureMyDoc() { if (!me || people.has(me)) return; try { await db.doc(`plans/${me}`).set({ handle: '', joined: Date.now() }); } catch (_) {} }
+  async function addFromCatalog(sid) {
+    if (!db || !me || !writable) return;
+    const ev = CAT.ev.get(sid); if (!ev || planOf(me).items.has(sid)) return;
+    try {
+      await itemsCol().doc(sid).set({ sid, plan: 'going', ticket: '', notes: '', orGroup: '', order: Date.now(), snap: snapOf(sid) });
+      await ensureMyDoc();
+      toast(`Added ${(CAT.films.get(ev.filmId) || {}).title || 'screening'} · ${shortDay(ev.date)}, ${fmt12(ev.start)}`);
+    } catch (e) { refused(e); }
+  }
+
+  /* ---------- festival schedule browser ---------- */
+  const catD = $('#cat');
+  let catDay = DAYS[1].id, catQ = '';
+  function openCatalog(day) {
+    if (day) { catDay = day; catQ = ''; }
+    $('#catQ').value = catQ; renderCatalog(); catD.showModal();
+    const sel = $('#catDays [aria-pressed="true"]'); if (sel) sel.scrollIntoView({ inline: 'center', block: 'nearest' });
+  }
+  function renderCatalog() {
+    const list = $('#catList');
+    const d = new Date(CAT.fetchedAt);
+    $('#catSub').textContent = CAT.ready ? `${CAT.ev.size} screenings, Nov 13–22` + (isNaN(d) ? '' : ` · as of ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`) : '';
+    $('#catCustom').hidden = !canWrite;
+    $('#catNote').textContent = !me ? 'Sign in to add screenings to your own schedule.' : !writable ? 'Your access is view-only, so you can browse but not add.' : viewing !== me ? 'Screenings you add go to your own schedule.' : '';
+    if (!CAT.ready) { list.replaceChildren(h('p', { class: 'cat-empty', text: "Couldn't load the festival schedule. Reload the page to try again." })); return; }
+    const mine = me ? planOf(me) : null;
+    const mySids = new Set(mine ? [...mine.items.values()].map(it => it.sid).filter(Boolean) : []);
+    const myRes = mine ? [...mine.items].map(([id, it]) => resolveItem(id, it)) : [];
+    $('#catDays').replaceChildren(...DAYS.map(dd => h('button', { type: 'button', class: 'cday', 'aria-pressed': String(!catQ && dd.id === catDay), 'aria-label': `${dd.wdl}, November ${dd.d}`, onclick: () => { catDay = dd.id; catQ = ''; $('#catQ').value = ''; renderCatalog(); list.scrollTop = 0; } },
+      h('small', { text: dd.wd }), h('b', { text: String(dd.d) }), h('span', { class: 'dot' + ((CAT.byDay.get(dd.id) || []).some(e => mySids.has(e.sid)) ? '' : ' off') }))));
+    const q = norm(catQ);
+    const evs = q ? [...CAT.ev.values()].filter(e => { const fm = CAT.films.get(e.filmId) || {}; return norm([fm.title, fm.director, fm.program, fm.genres, e.venue, fm.focus].join(' ')).includes(q); })
+      .sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start)) : (CAT.byDay.get(catDay) || []);
+    if (!evs.length) { list.replaceChildren(h('p', { class: 'cat-empty', text: q ? `No screenings match “${catQ}”.` : 'No screenings this day.' })); return; }
+    const out = []; let lastDay = '';
+    for (const e of evs) { if (q && e.date !== lastDay) { out.push(h('p', { class: 'cgroup', text: shortDay(e.date) })); lastDay = e.date; } out.push(catRow(e, mySids, myRes)); }
+    list.replaceChildren(...out);
+  }
+  function catRow(e, mySids, myRes) {
+    const fm = CAT.films.get(e.filmId) || {}, inPlan = mySids.has(e.sid);
+    const row = h('div', { class: `crow hue-${HUES[fm.program] || 'cyan'}` + (inPlan ? ' in' : '') });
+    const s0 = toMin(e.start), e0 = toMin(e.end);
+    const clashes = myRes.filter(f => f.sid !== e.sid && f.day === e.date && f.plan !== 'maybe' && toMin(f.time) != null && toMin(f.end) != null && toMin(f.time) < e0 && s0 < toMin(f.end)).map(f => f.title.length > 32 ? f.title.slice(0, 30).trimEnd() + '…' : f.title);
+    const friends = (withAll.get(e.sid) || []).filter(u => u !== me).map(handleOf);
+    const meta = h('div', { class: 'cm' },
+      h('span', { class: 'cs', text: fm.program || '' }),
+      h('span', { class: 'cn' }, fm.title || '', fm.year ? h('span', { class: 'yr', text: ` (${fm.year})` }) : null),
+      h('span', { class: 'cv', text: [e.venue, fm.mins ? `${fm.mins} min` : '', fm.director && fm.director !== 'To be announced' ? `dir. ${fm.director}` : ''].filter(Boolean).join(' · ') }));
+    const ex = evExtras(e, fm); if (ex.length) meta.append(h('div', { class: 'tags' }, ...ex.map(x => h('span', { class: 'tag xtra', title: x === 'Q&A' && e.guests ? `Q&A with ${e.guests}` : null, text: x }))));
+    if (clashes.length) meta.append(h('span', { class: 'cwarn', text: `Overlaps ${clashes.join(', ')} in your schedule` }));
+    if (friends.length) meta.append(h('span', { class: 'cfr', text: `Also going: ${friends.join(', ')}` }));
+    if (fm.logline) {
+      const lp = h('p', { class: 'clog', text: fm.logline, hidden: true });
+      const lb = h('button', { type: 'button', class: 'cmore', 'aria-expanded': 'false' }, 'About this film');
+      lb.onclick = () => { lp.hidden = !lp.hidden; lb.setAttribute('aria-expanded', String(!lp.hidden)); lb.textContent = lp.hidden ? 'About this film' : 'Hide'; };
+      meta.append(lb, lp);
+    }
+    row.append(h('div', { class: 'ct' }, fmt12(e.start), h('small', { text: '– ' + fmt12(e.end) })), meta);
+    if (me && writable && db) {
+      if (inPlan) row.append(viewing === me
+        ? h('button', { type: 'button', class: 'cadd on', title: 'Edit this entry', onclick: () => { const it = planOf(me).items.get(e.sid); catD.close(); if (it) openDialog(resolveItem(e.sid, it)); } }, '✓ Added')
+        : h('button', { type: 'button', class: 'cadd on', disabled: true }, '✓ In yours'));
+      else row.append(h('button', { type: 'button', class: 'cadd', onclick: ev => { ev.currentTarget.disabled = true; addFromCatalog(e.sid); } }, '+ Add'));
+    }
+    return row;
+  }
+  $('#catClose').onclick = () => catD.close();
+  $('#catQ').addEventListener('input', e => { catQ = e.target.value; renderCatalog(); $('#catList').scrollTop = 0; });
+  $('#catCustom').onclick = () => { const d = catDay; catD.close(); openDialog(null, { day: d }); };
+  catD.addEventListener('click', e => { if (e.target === catD) catD.close(); });
+
+  /* ---------- rows ---------- */
+  function buildRows() {
+    const main = $('#days');
+    for (const day of DAYS) {
+      const sec = h('section', { class: 'day', 'aria-label': `${day.wdl}, November ${day.d}` });
+      const btns = {};
+      const st = h('div', { class: 'dstat', role: 'group', 'aria-label': `Plan for November ${day.d}`, hidden: true });
+      for (const [k, l] of [['attending', 'Going'], ['tbc', 'TBC'], ['skip', 'Skip']]) {
+        const b = h('button', { type: 'button', 'data-s': k, 'aria-pressed': 'false', title: DAY_LABEL[k], onclick: () => setDay(day.id, k) }, l);
+        btns[k] = b; st.append(b);
+      }
+      const lab = h('span', { class: 'dlabel' });
+      const sum = h('span', { class: 'sum' });
+      const dadd = h('button', { type: 'button', class: 'dadd', hidden: true, 'aria-label': `Add to November ${day.d}`, onclick: () => openCatalog(day.id) }, '+ Add to this day');
+      const date = h('div', { class: 'date' },
+        h('span', { class: 'mo', text: 'November' }),
+        h('span', { class: 'dn', 'aria-hidden': 'true', text: String(day.d) }),
+        h('span', { class: 'wd', text: day.wdl }), sum, st, lab, dadd);
+      const tiles = h('div', { class: 'tiles' });
+      const slotSub = h('small');
+      const slot = h('button', { type: 'button', class: 'slot', onclick: () => openCatalog(day.id) }, h('span', { class: 'plus', text: '+' }), h('span', { text: `Add to Nov ${day.d}` }), slotSub);
+      const empty = h('p', { class: 'emptynote' });
+      sec.append(date, tiles);
+      sec.addEventListener('dragover', e => { if (!canWrite || !assets || !hasFiles(e)) return; e.preventDefault(); sec.classList.add('drop-on'); });
+      sec.addEventListener('dragleave', e => { if (!sec.contains(e.relatedTarget)) sec.classList.remove('drop-on'); });
+      sec.addEventListener('drop', e => { sec.classList.remove('drop-on'); if (!canWrite || !assets) return; const f = imageFromTransfer(e.dataTransfer); if (!f) return; e.preventDefault(); openDialog(null, { day: day.id }); handleFile(f); });
+      main.append(sec);
+      rows[day.id] = { sec, st, btns, lab, sum, tiles, slot, slotSub, empty, dadd };
+    }
+  }
+
+  function matches(f) {
+    switch (filter) {
+      case 'going': return f.plan !== 'maybe';
+      case 'maybe': return f.plan === 'maybe';
+      case 'outside': return f.kind === 'outside';
+      case 'badge': case 'tobuy': case 'bought': return f.ticket === filter;
+      default: return true;
+    }
+  }
+
+  function buildCard(f, clashes, dups, withs) {
+    const plan = f.plan === 'maybe' ? 'maybe' : 'going';
+    const hue = hueFor(f);
+    const card = h('article', { class: `card ${plan} hue-${hue}${f.kind === 'outside' ? ' outside' : ''}` });
+    const pic = h('div', { class: 'pic' });
+    const label = (f.title || 'Untitled') + (f.kind !== 'talk' && f.year ? ` (${f.year})` : '');
+    if (f.image && f.image.id) {
+      const src = imgSrc(f.image.id);
+      if (f.image.fit === 'whole') { pic.classList.add('whole'); pic.append(h('img', { class: 'bg', src, alt: '', 'aria-hidden': 'true', loading: 'lazy', decoding: 'async', draggable: 'false' })); }
+      else pic.style.setProperty('--pos', posFor(f.image));
+      const img = h('img', { class: 'fg', src, alt: `Still or poster for ${label}`, loading: 'lazy', decoding: 'async', draggable: 'false' });
+      img.addEventListener('error', () => { pic.classList.remove('whole'); pic.classList.add('blank'); pic.querySelectorAll('img').forEach(i => i.remove()); });
+      pic.append(img);
+    } else pic.classList.add('blank');
+    const tl = (f.title || 'Untitled').length;
+    pic.append(h('span', { class: 'ph' + (tl > 34 ? ' xlong' : tl > 18 ? ' long' : ''), 'aria-hidden': 'true', text: f.title || 'Untitled' }));
+    if (canWrite && assets) pic.append(h('span', { class: 'ph-hint', 'aria-hidden': 'true', text: 'Drop a poster' }));
+    if (plan === 'going') { const s = h('span', { class: 'sticker', title: 'Going' }); s.innerHTML = STAR_FULL; card.append(s); }
+
+    const meta = h('div', { class: 'meta' });
+    const secLabel = f.kind === 'outside' ? 'Outside QCinema' : f.kind === 'talk' ? (f.section || 'Talk') : f.section;
+    if (secLabel) meta.append(h('span', { class: 'sec', text: secLabel }));
+    meta.append(h('h3', null, f.title || 'Untitled', f.kind !== 'talk' && f.year ? h('span', { class: 'yr', text: ` (${f.year})` }) : null));
+    if (f.time) meta.append(h('span', { class: 'when', text: fmtRange(f.time, f.end) }));
+    if (f.venue) meta.append(h('span', { class: 'where', text: f.venue }));
+    const tags = h('div', { class: 'tags' });
+    if (f.ticket === 'badge') tags.append(h('span', { class: 'tag badge', text: '🎫 Badge' }));
+    else if (f.ticket === 'tobuy') tags.append(canWrite
+      ? h('button', { type: 'button', class: 'tag tobuy', title: 'Mark as bought', onclick: e => { e.stopPropagation(); markBought(f); } }, '💵 To buy')
+      : h('span', { class: 'tag tobuy', text: '💵 To buy' }));
+    else if (f.ticket === 'bought') tags.append(h('span', { class: 'tag bought', text: '✓ Bought' }));
+    if (plan === 'maybe') tags.append(h('span', { class: 'tag maybe', text: '☆ Maybe' }));
+    for (const x of f.extras || []) tags.append(h('span', { class: 'tag xtra', title: x === 'Q&A' && f.guests ? `Q&A with ${f.guests}` : null, text: x }));
+    if (clashes && clashes.length) tags.append(h('span', { class: 'tag clash', text: `Clashes with ${clashes.join(', ')}` }));
+    if (dups && dups.length) tags.append(h('span', { class: 'tag dup', text: `Also on ${dups.join(', ')}` }));
+    if (f.gone) tags.append(h('span', { class: 'tag gone', text: 'No longer in the festival schedule' }));
+    if (withs && withs.length) tags.append(h('span', { class: 'tag with', text: `With ${withs.join(', ')}` }));
+    meta.append(tags);
+    if (f.notes) meta.append(h('p', { class: 'note', text: f.notes }));
+    if (!canWrite && me && writable && f.catalog && !f.gone && viewing !== me) meta.append(planOf(me).items.has(f.sid)
+      ? h('span', { class: 'mine on', text: '✓ In your schedule' })
+      : h('button', { type: 'button', class: 'mine', onclick: e => { e.currentTarget.disabled = true; addFromCatalog(f.sid); } }, '+ Add to mine'));
+    card.append(pic, meta);
+
+    if (canWrite) {
+      card.append(h('button', { type: 'button', class: 'hit', 'aria-label': `Edit ${label}`, onclick: () => openDialog(f) }));
+      if (assets) {
+        card.addEventListener('dragover', e => { if (!hasFiles(e)) return; e.preventDefault(); e.stopPropagation(); card.classList.add('drop-on'); });
+        card.addEventListener('dragleave', e => { if (!card.contains(e.relatedTarget)) card.classList.remove('drop-on'); });
+        card.addEventListener('drop', e => { card.classList.remove('drop-on'); const file = imageFromTransfer(e.dataTransfer); if (!file) return; e.preventDefault(); e.stopPropagation(); setCardImage(f, file, card); });
+      }
+      attachDrag(card, [f]);
+    }
+    return card;
+  }
+
+  const assetInUse = (id, exceptId) => [...posters.values()].some(im => im && im.id === id) || [...plans.values()].some(p => [...p.items].some(([k, it]) => k !== exceptId && it.image && it.image.id === id));
+  // Two entries on the same day sharing an orGroup are shown as one "undecided" split.
+  function pairsByDay(list) {
+    const groups = new Map(), pairOf = new Map();
+    for (const f of list) if (f.orGroup) (groups.get(f.orGroup) || groups.set(f.orGroup, []).get(f.orGroup)).push(f);
+    for (const g of groups.values()) if (g.length >= 2) { const pr = [g[0], g[1]]; pairOf.set(pr[0].id, pr); pairOf.set(pr[1].id, pr); }
+    return pairOf;
+  }
+  function slotsFor(list, keep) {
+    const pairOf = pairsByDay(list), used = new Set(), slots = [];
+    for (const f of list) {
+      if (used.has(f.id)) continue;
+      const pr = pairOf.get(f.id);
+      if (pr) { pr.forEach(x => used.add(x.id)); if (!keep || pr.some(keep)) slots.push({ pair: pr }); }
+      else if (!keep || keep(f)) slots.push({ f });
+    }
+    return slots;
+  }
+  function halfPic(f, cls) {
+    const half = h('div', { class: `half ${cls} hue-${hueFor(f)}` + (f.image && f.image.id ? '' : ' blank') });
+    if (f.image && f.image.id) {
+      const img = h('img', { src: imgSrc(f.image.id), alt: '', loading: 'lazy', decoding: 'async', draggable: 'false' });
+      if (f.image.fit === 'whole') img.style.objectFit = 'contain'; else img.style.objectPosition = posFor(f.image);
+      img.addEventListener('error', () => { half.classList.add('blank'); img.remove(); });
+      half.append(img);
+    }
+    half.append(h('span', { class: 'ht', 'aria-hidden': 'true', text: f.title || 'Untitled' }));
+    return half;
+  }
+  function buildSplit(a, b, duA, duB) {
+    const card = h('article', { class: 'card split', 'aria-label': `Undecided: ${a.title} or ${b.title}` });
+    const same = !(a.image && a.image.id) && !(b.image && b.image.id) && hueFor(a) === hueFor(b);
+    const pic = h('div', { class: 'pic spic' }, halfPic(a, 'ha'), halfPic(b, same ? 'hb same' : 'hb'));
+    pic.insertAdjacentHTML('beforeend', '<svg class="slash" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="100" y1="0" x2="0" y2="100" vector-effect="non-scaling-stroke"/></svg>');
+    pic.append(h('span', { class: 'orb', 'aria-hidden': 'true', text: 'OR' }));
+    const meta = h('div', { class: 'meta' }, h('span', { class: 'sec und', text: 'Undecided' }));
+    const opts = h('div', { class: 'opts2' });
+    const confirm = h('div', { class: 'pickc', hidden: true });
+    const askPick = (keep, drop) => {
+      confirm.replaceChildren(
+        h('span', { text: `Keep ${keep.title} and remove ${drop.title} from ${shortDay(drop.day)}?` }),
+        h('button', { type: 'button', class: 'btn yes', onclick: () => doPick(keep, drop) }, 'Keep it'),
+        h('button', { type: 'button', class: 'btn', onclick: () => { confirm.hidden = true; } }, 'Cancel'));
+      confirm.hidden = false;
+    };
+    [[a, b, duA, ''], [b, a, duB, ' right']].forEach(([f, other, du, side]) => {
+      const yr = f.kind !== 'talk' && f.year ? h('span', { class: 'yr', text: ` (${f.year})` }) : null;
+      const o = h('div', { class: 'opt' + side });
+      o.append(canWrite ? h('button', { type: 'button', class: 'opt-t', title: 'Edit', onclick: () => openDialog(f) }, f.title || 'Untitled', yr) : h('h3', null, f.title || 'Untitled', yr));
+      if (f.time) o.append(h('span', { class: 'when', text: fmtRange(f.time, f.end) }));
+      if (f.venue) o.append(h('span', { class: 'where', text: f.venue }));
+      const tags = h('div', { class: 'tags' });
+      if (f.ticket === 'badge') tags.append(h('span', { class: 'tag badge', text: '🎫 Badge' }));
+      else if (f.ticket === 'tobuy') tags.append(h('span', { class: 'tag tobuy', text: '💵 To buy' }));
+      else if (f.ticket === 'bought') tags.append(h('span', { class: 'tag bought', text: '✓ Bought' }));
+      if (f.kind === 'outside') tags.append(h('span', { class: 'tag out', text: 'Outside QCinema' }));
+      for (const x of f.extras || []) tags.append(h('span', { class: 'tag xtra', text: x }));
+      if (du && du.length) tags.append(h('span', { class: 'tag dup', text: `Also on ${du.join(', ')}` }));
+      o.append(tags);
+      if (f.notes) o.append(h('p', { class: 'note', text: f.notes }));
+      if (canWrite) o.append(h('button', { type: 'button', class: 'pick', onclick: () => askPick(f, other) }, 'Go with this'));
+      opts.append(o);
+    });
+    meta.append(opts, confirm);
+    card.append(pic, meta);
+    if (canWrite) attachDrag(card, [a, b]);
+    return card;
+  }
+  async function doPick(keep, drop) {
+    try {
+      await itemsCol().doc(keep.id).update({ plan: 'going', orGroup: '' });
+      await itemsCol().doc(drop.id).delete();
+      if (drop.image && drop.image.id && !assetInUse(drop.image.id, drop.id)) dropAsset(drop.image.id);
+      toast(`Going with ${keep.title}`);
+    } catch (e) { toast(dbMsg(e)); }
+  }
+
+  /* Drag a card (or an undecided pair) onto another day. Mouse: press and move.
+     Touch: long-press, then drag; a quick swipe still scrolls the page. */
+  let drag = null;
+  function dayUnder(x, y) {
+    const el = document.elementFromPoint(x, y), sec = el && el.closest ? el.closest('.day') : null;
+    return sec ? Object.keys(rows).find(k => rows[k].sec === sec) || null : null;
+  }
+  function attachDrag(card, entries) {
+    card.classList.add('draggable');
+    card.addEventListener('pointerdown', e => {
+      if (drag || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      if (e.target.closest('button:not(.hit), a, input, select, textarea')) return;
+      const st = { entries, card, pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, x: e.clientX, y: e.clientY, active: false, touch: e.pointerType !== 'mouse' };
+      drag = st;
+      if (st.touch) st.timer = setTimeout(() => { if (drag === st) beginDrag(); }, 380);
+    });
+    card.addEventListener('contextmenu', e => { if (drag && drag.card === card) e.preventDefault(); });
+  }
+  function beginDrag() {
+    const d = drag; if (!d || d.active) return;
+    clearTimeout(d.timer); d.active = true; d.from = d.entries[0].day;
+    const r = d.card.getBoundingClientRect();
+    d.offX = d.startX - r.left; d.offY = d.startY - r.top;
+    const g = d.card.cloneNode(true); g.classList.add('ghost'); g.classList.remove('dragging'); g.style.width = r.width + 'px'; g.setAttribute('aria-hidden', 'true');
+    document.body.append(g); d.ghost = g;
+    d.card.classList.add('dragging'); document.body.classList.add('is-dragging');
+    if (d.touch && navigator.vibrate) { try { navigator.vibrate(12); } catch (_) {} }
+    moveGhost(); d.raf = requestAnimationFrame(autoScroll);
+  }
+  function moveGhost() {
+    const d = drag; if (!d || !d.ghost) return;
+    d.ghost.style.transform = `translate(${d.x - d.offX}px, ${d.y - d.offY}px) rotate(1.5deg)`;
+    let over = dayUnder(d.x, d.y); if (over === d.from) over = null;
+    if (over !== d.over) {
+      if (d.over) { rows[d.over].sec.classList.remove('drop-on'); d.label && d.label.remove(); }
+      d.over = over;
+      if (over) { rows[over].sec.classList.add('drop-on'); d.label = h('span', { class: 'drop-label', text: `Move to ${shortDay(over)}` }); rows[over].sec.append(d.label); }
+    }
+  }
+  function autoScroll() {
+    const d = drag; if (!d || !d.active) return;
+    const edge = 90, H = window.innerHeight; let v = 0;
+    if (Math.abs(d.y - d.startY) > 40) { if (d.y < edge) v = -Math.ceil((edge - d.y) / 5); else if (d.y > H - edge) v = Math.ceil((d.y - (H - edge)) / 5); }
+    if (v) { window.scrollBy(0, v); moveGhost(); }
+    d.raf = requestAnimationFrame(autoScroll);
+  }
+  function endDrag(d) {
+    clearTimeout(d.timer);
+    if (d.active) {
+      cancelAnimationFrame(d.raf); d.ghost && d.ghost.remove(); d.label && d.label.remove();
+      d.card.classList.remove('dragging'); document.body.classList.remove('is-dragging');
+      if (d.over) rows[d.over].sec.classList.remove('drop-on');
+      const stop = e => { e.stopPropagation(); e.preventDefault(); };
+      window.addEventListener('click', stop, { capture: true, once: true });
+      setTimeout(() => window.removeEventListener('click', stop, { capture: true }), 350);
+    }
+    drag = null;
+  }
+  // Festival entries move to that film's screening on the new day; your own entries just change date.
+  const screeningOn = (f, day) => (CAT.byFilm.get(f.filmId) || []).filter(e => e.date === day);
+  async function changeSid(f, sid) {
+    const raw = { ...(planOf(me).items.get(f.id) || {}) };
+    raw.sid = sid; raw.snap = snapOf(sid) || raw.snap || null;
+    await itemsCol().doc(sid).set(raw);
+    if (f.id !== sid) await itemsCol().doc(f.id).delete();
+  }
+  async function moveEntries(entries, to) {
+    for (const f of entries) if (f.catalog) {
+      const opts = screeningOn(f, to);
+      if (!opts.length) { toast(`${f.title} has no festival screening on ${shortDay(to)}.`); return; }
+      if (planOf(me).items.has(opts[0].sid)) { toast(`${f.title} on ${shortDay(to)} is already in your schedule.`); return; }
+    }
+    try {
+      const done = [];
+      for (const f of entries) {
+        if (f.catalog) { const ev = screeningOn(f, to)[0]; await changeSid(f, ev.sid); done.push(`${f.title} (${fmt12(ev.start)}, ${ev.venue})`); }
+        else { await itemsCol().doc(f.id).update({ day: to }); done.push(f.title); }
+      }
+      toast(`Moved ${done.join(' / ')} to ${shortDay(to)}.` + (entries.some(f => !f.catalog) ? ' Check the time and place.' : ''));
+    } catch (e) { refused(e); }
+  }
+  document.addEventListener('pointermove', e => {
+    const d = drag; if (!d || e.pointerId !== d.pointerId) return;
+    d.x = e.clientX; d.y = e.clientY;
+    if (!d.active) {
+      const moved = Math.hypot(d.x - d.startX, d.y - d.startY);
+      if (d.touch) { if (moved > 10) endDrag(d); } else if (moved > 6) beginDrag();
+      return;
+    }
+    e.preventDefault(); moveGhost();
+  }, { passive: false });
+  document.addEventListener('touchmove', e => { if (drag && drag.active) e.preventDefault(); }, { passive: false });
+  document.addEventListener('pointerup', e => {
+    const d = drag; if (!d || e.pointerId !== d.pointerId) return;
+    const to = d.active ? d.over : null; endDrag(d);
+    if (to) moveEntries(d.entries, to);
+  });
+  document.addEventListener('pointercancel', e => { if (drag && e.pointerId === drag.pointerId) endDrag(drag); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && drag && drag.active) endDrag(drag); });
+
+  function render() {
+    const byDay = Object.fromEntries(DAYS.map(d => [d.id, []]));
+    const withOf = f => f.sid ? (withAll.get(f.sid) || []).filter(u => u !== viewing).map(handleOf) : [];
+    for (const f of films) if (byDay[f.day]) byDay[f.day].push(f);
+    const sortKey = f => [f.time ? 0 : 1, toMin(f.time) ?? 0, f.order ?? 0];
+    for (const list of Object.values(byDay)) list.sort((a, b) => { const A = sortKey(a), B = sortKey(b); return A[0] - B[0] || A[1] - B[1] || A[2] - B[2]; });
+
+    // clashes between "going" entries on the same day
+    const clash = new Map();
+    for (const list of Object.values(byDay)) {
+      const timed = list.filter(f => f.plan !== 'maybe' && toMin(f.time) != null && toMin(f.end) != null);
+      for (let i = 0; i < timed.length; i++) for (let j = i + 1; j < timed.length; j++) {
+        const a = timed[i], b = timed[j];
+        if (toMin(a.time) < toMin(b.end) && toMin(b.time) < toMin(a.end)) {
+          (clash.get(a.id) || clash.set(a.id, []).get(a.id)).push(b.title);
+          (clash.get(b.id) || clash.set(b.id, []).get(b.id)).push(a.title);
+        }
+      }
+    }
+    // same title on another day
+    const byTitle = new Map();
+    for (const f of films) { if (f.kind === 'talk') continue; const k = norm(f.title); if (!k) continue; (byTitle.get(k) || byTitle.set(k, []).get(k)).push(f); }
+    const dupFor = f => { const g = byTitle.get(norm(f.title)) || []; return g.filter(x => x.id !== f.id && x.day !== f.day).map(x => shortDay(x.day).replace(/^\w+, /, '')); };
+
+    // counts
+    const c = { all: films.length, going: 0, maybe: 0, badge: 0, tobuy: 0, bought: 0, outside: 0 };
+    for (const f of films) { f.plan === 'maybe' ? c.maybe++ : c.going++; if (c[f.ticket] != null && f.ticket) c[f.ticket]++; if (f.kind === 'outside') c.outside++; }
+    document.querySelectorAll('[data-c]').forEach(b => b.textContent = b.dataset.c === 'badge' ? `${c.badge}/${BADGE_MAX}` : c[b.dataset.c]);
+
+    const today = new Date(); const todayId = today.getFullYear() === 2026 && today.getMonth() === 10 ? `2026-11-${today.getDate()}` : '';
+    const seen = new Set();
+    let daysPlanned = 0;
+    for (const day of DAYS) {
+      const r = rows[day.id], list = byDay[day.id], s = dayStatus[day.id] || '';
+      r.sec.classList.toggle('tbc', s === 'tbc');
+      r.sec.classList.toggle('skip', s === 'skip');
+      r.sec.classList.toggle('today', day.id === todayId);
+      for (const [k, b] of Object.entries(r.btns)) b.setAttribute('aria-pressed', String(s === k));
+      r.st.hidden = !canWrite; r.lab.hidden = canWrite || !s; r.lab.textContent = DAY_LABEL[s] || '';
+      if (list.length && s !== 'skip') daysPlanned++;
+
+      // summary: count + span of the day + venues
+      if (list.length) {
+        const n = list.length, timed = list.filter(f => f.time);
+        let txt = `${n} ${n === 1 ? 'entry' : 'entries'}`;
+        if (timed.length) {
+          const first = timed[0].time, last = timed.reduce((m, f) => (toMin(f.end || f.time) > toMin(m) ? (f.end || f.time) : m), timed[0].end || timed[0].time);
+          txt += `\n${fmt12(first)} – ${fmt12(last)}`;
+        }
+        r.sum.textContent = txt; r.sum.style.whiteSpace = 'pre-line';
+      } else r.sum.textContent = s === 'tbc' ? 'Still for confirmation' : s === 'skip' ? 'Rest day' : '';
+
+      const slots = slotsFor(list, matches);
+      const els = slots.map(sl => {
+        if (sl.pair) {
+          const [a, b] = sl.pair, da = dupFor(a), dbb = dupFor(b), cid = 'pair:' + a.id + '|' + b.id;
+          const key = JSON.stringify([a, b, da, dbb, canWrite]);
+          let entry = cardCache.get(cid);
+          if (!entry || entry.key !== key) { entry = { key, el: buildSplit(a, b, da, dbb) }; cardCache.set(cid, entry); }
+          seen.add(cid);
+          return entry.el;
+        }
+        const f = sl.f;
+        const cl = clash.get(f.id) || [], du = dupFor(f), wi = withOf(f);
+        const mineHas = me && viewing !== me && f.sid ? planOf(me).items.has(f.sid) : null;
+        const key = JSON.stringify([f, cl, du, wi, mineHas, canWrite, !!assets, writable]);
+        let entry = cardCache.get(f.id);
+        if (!entry || entry.key !== key) { entry = { key, el: buildCard(f, cl, du, wi) }; cardCache.set(f.id, entry); }
+        seen.add(f.id);
+        return entry.el;
+      });
+      const extra = [];
+      r.dadd.hidden = !(canWrite && list.length);
+      if (canWrite && !list.length) { r.slotSub.textContent = s === 'tbc' ? 'Day still for confirmation' : s === 'skip' ? 'Rest day' : 'Nothing planned yet'; extra.push(r.slot); }
+      else if (!slots.length) { r.empty.textContent = list.length ? 'Nothing here matches this filter.' : (s === 'tbc' ? 'Still for confirmation.' : 'Nothing planned.'); extra.push(r.empty); }
+      r.tiles.replaceChildren(...els, ...extra);
+    }
+    for (const id of [...cardCache.keys()]) if (!seen.has(id) && !films.some(f => f.id === id)) cardCache.delete(id);
+    setStatus(daysPlanned);
+    scheduleShare();
+  }
+
+  function countdown() {
+    const t = new Date(); const today = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+    const start = new Date(2026, 10, 13); const n = Math.round((start - today) / 864e5);
+    if (n > 1) return `Opens in ${n} days`;
+    if (n === 1) return 'Opens tomorrow';
+    const k = 1 - n;
+    return k <= 10 ? `Festival day ${k} of 10` : 'Festival wrapped';
+  }
+  let statusOverride = null;
+  function setStatus(daysPlanned) {
+    const el = $('#status');
+    if (statusOverride) { el.replaceChildren(h('span', { class: statusOverride.warn ? 'warn' : null, text: statusOverride.text })); return; }
+    if (!loadedFilms && !films.length) { el.replaceChildren(h('span', { text: viewing && viewing !== me ? 'Loading this schedule…' : 'Loading your schedule…' })); return; }
+    el.replaceChildren(
+      h('span', null, '🎫 ', h('strong', { text: String(films.filter(f => f.ticket === 'badge').length) }), ` of ${BADGE_MAX} badge passes used`));
+  }
+
+  /* ---------- writes ---------- */
+  async function setDay(dayId, s) {
+    if (!db) return;
+    const ref = daysCol().doc(dayId);
+    try { if (dayStatus[dayId] === s) await ref.delete(); else { await ref.set({ status: s }); await ensureMyDoc(); } }
+    catch (e) { refused(e); }
+  }
+  async function markBought(f) {
+    try { await itemsCol().doc(f.id).update({ ticket: 'bought' }); toast(`Marked ${f.title} as bought`); }
+    catch (e) { refused(e); }
+  }
+  async function setCardImage(f, file, card) {
+    const pic = card.querySelector('.pic'); const busy = h('div', { class: 'up', text: 'Uploading…' }); pic.append(busy);
+    try {
+      const img = await uploadImage(file);
+      const im = { id: img.id, w: img.w, h: img.h };
+      try { if (f.catalog && f.filmId && !f.ownImage) await db.doc(`posters/${f.filmId}`).set({ image: im, by: me || '' }); else await itemsCol().doc(f.id).update({ image: im }); }
+      catch (e) { dropAsset(img.id); throw { db: e }; }
+      if (f.image && f.image.id && f.image.id !== img.id && !assetInUse(f.image.id, f.id)) dropAsset(f.image.id);
+      toast(`Added an image to ${f.title}`);
+    } catch (e) { busy.remove(); toast(e && e.db ? dbMsg(e.db) : upMsg(e)); }
+  }
+
+  /* ---------- dialog ---------- */
+  const dlg = $('#dlg'), form = $('#form');
+  let editing = null, img = null, uploaded = [], saved = false, busy = false, session = 0;
+  const daySel = $('#fDay');
+  for (const d of DAYS) daySel.append(h('option', { value: d.id, text: `${d.wd}, Nov ${d.d}` }));
+
+  function setRadio(name, v) { const el = form.querySelector(`input[name="${name}"][value="${v}"]`); if (el) el.checked = true; }
+  const getRadio = name => (form.querySelector(`input[name="${name}"]:checked`) || {}).value || '';
+  function showImg(src) {
+    const prev = $('#prev');
+    if (src) { prev.src = src; prev.hidden = false; $('#dropHint').hidden = true; $('#drop').classList.add('has'); }
+    else { prev.removeAttribute('src'); prev.hidden = true; $('#dropHint').hidden = false; $('#drop').classList.remove('has'); }
+    $('#removeImg').hidden = !src;
+    $('#pickImg').textContent = src ? 'Replace image' : 'Choose image';
+    syncImgCtl();
+  }
+  function syncImgCtl() {
+    const has = !!img, whole = has && img.fit === 'whole';
+    $('#fitSet').hidden = !has; $('#posWrap').hidden = !has || whole;
+    $('#drop').classList.toggle('whole', whole);
+    $('#drop').style.setProperty('--pos', posFor(img));
+    if (!has) return;
+    setRadio('fit', whole ? 'whole' : 'fill');
+    $('#fPos').value = img.pos != null ? img.pos : 50;
+    const tall = isTall(img);
+    $('#posA').textContent = tall ? 'Top' : 'Left'; $('#posB').textContent = tall ? 'Bottom' : 'Right';
+  }
+  const showErr = m => { $('#err').textContent = m || ''; };
+  function setBusy(b) { busy = b; $('#dropBusy').hidden = !b; $('#saveBtn').disabled = b; }
+
+  function openDialog(f, opts = {}) {
+    if (!canWrite) return;
+    session++; editing = f || null; img = f && f.image ? { ...f.image } : null; uploaded = []; saved = false; setBusy(false); showErr('');
+    const isCat = !!(f && f.catalog);
+    $('#dlgTitle').textContent = isCat ? f.title : f ? 'Edit entry' : 'Add your own film or talk';
+    $('#catFields').hidden = !isCat; $('#customFields').hidden = isCat; $('#kindSet').hidden = isCat;
+    const sidSel = $('#fSid'); sidSel.replaceChildren();
+    if (isCat) {
+      const opts = f.filmId ? CAT.byFilm.get(f.filmId) || [] : [];
+      if (!opts.some(e => e.sid === f.sid)) sidSel.append(h('option', { value: f.sid, text: `${shortDay(f.day)} · ${fmt12(f.time)} · ${f.venue} (no longer listed)` }));
+      for (const e of opts) { const taken = e.sid !== f.sid && planOf(me).items.has(e.sid); sidSel.append(h('option', { value: e.sid, disabled: taken, text: `${shortDay(e.date)} · ${fmt12(e.start)} · ${e.venue}${taken ? ' (already added)' : ''}` })); }
+      sidSel.value = f.sid;
+    }
+    $('#fTitle').value = f ? f.title || '' : '';
+    $('#fYear').value = f ? f.year || '' : '';
+    daySel.value = (f && f.day) || opts.day || (dayOf(new Date().toISOString().slice(0, 10)) ? new Date().toISOString().slice(0, 10) : DAYS[1].id);
+    $('#fTime').value = f ? f.time || '' : ''; $('#fEnd').value = f ? f.end || '' : '';
+    $('#fVenue').value = f ? f.venue || '' : '';
+    $('#fNotes').value = f ? f.notes || '' : '';
+    setRadio('kind', (f && f.kind) || 'film'); setRadio('plan', (f && f.plan) || 'going'); setRadio('ticket', (f && f.ticket) || ''); syncTicketOpts(); fillOrOptions();
+    showImg(img ? imgSrc(img.id) : null);
+    $('#imgrow').hidden = !assets;
+    const info = $('#info'); info.replaceChildren();
+    if (f && (f.section || f.director || f.guests)) {
+      info.append(h('span', { text: 'From the festival schedule' }));
+      if (f.section) info.append(h('span', null, 'Section: ', h('b', { text: f.section })));
+      if (f.director) info.append(h('span', null, f.kind === 'talk' ? 'Speakers: ' : 'Director: ', h('b', { text: f.director })));
+      if (f.guests) info.append(h('span', null, 'Q&A: ', h('b', { text: f.guests })));
+      if (f.logline) info.append(h('p', { class: 'clog', text: f.logline }));
+      if (f.catalog && f.image && !f.ownImage && assets) info.append(h('span', { text: 'This poster shows on every screening of this film you add.' }));
+      info.hidden = false;
+    } else info.hidden = true;
+    $('#delBtn').hidden = !f; $('#delConfirm').hidden = true;
+    dlg.showModal();
+    if (!f) setTimeout(() => $('#fTitle').focus(), 30);
+  }
+
+  async function handleFile(file) {
+    if (!assets) { showErr("Image uploads aren't available in this view."); return; }
+    if (!file || !file.type.startsWith('image/')) { showErr('Choose an image file (JPG, PNG, WebP or GIF).'); return; }
+    const my = session; const before = img; showErr(''); setBusy(true);
+    const local = URL.createObjectURL(file); showImg(local);
+    try {
+      const up = await uploadImage(file);
+      if (my !== session || !dlg.open) { dropAsset(up.id); return; }
+      uploaded.push(up.id); img = { id: up.id, w: up.w, h: up.h, fit: 'fill', pos: 50 }; showImg(up.url);
+    } catch (e) {
+      if (my === session) { showErr(upMsg(e)); showImg(before ? imgSrc(before.id) : null); }
+    } finally { if (my === session) setBusy(false); setTimeout(() => URL.revokeObjectURL(local), 2000); }
+  }
+
+  function cleanup() {
+    const original = editing && editing.image ? editing.image.id : null;
+    const final = img ? img.id : null;
+    if (saved) {
+      for (const id of uploaded) if (id !== final) dropAsset(id);
+      if (original && original !== final && !assetInUse(original, editing && editing.id)) dropAsset(original);
+    } else for (const id of uploaded) dropAsset(id);
+    uploaded = [];
+  }
+  dlg.addEventListener('close', () => { session++; cleanup(); });
+  $('#closeBtn').onclick = () => dlg.close();
+  $('#cancelBtn').onclick = () => dlg.close();
+  $('#pickImg').onclick = () => $('#file').click();
+  $('#drop').onclick = () => { if (!busy) $('#file').click(); };
+  $('#drop').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('#file').click(); } };
+  $('#file').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) handleFile(f); };
+  $('#removeImg').onclick = () => { img = null; showImg(null); };
+  form.querySelectorAll('input[name="fit"]').forEach(r => r.addEventListener('change', () => { if (!img) return; img.fit = getRadio('fit') === 'whole' ? 'whole' : 'fill'; syncImgCtl(); }));
+  $('#fPos').addEventListener('input', e => { if (!img) return; img.pos = +e.target.value; $('#drop').style.setProperty('--pos', posFor(img)); });
+  const drop = $('#drop');
+  drop.addEventListener('dragover', e => { if (!hasFiles(e)) return; e.preventDefault(); drop.classList.add('drag'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+  drop.addEventListener('drop', e => { drop.classList.remove('drag'); const f = imageFromTransfer(e.dataTransfer); if (!f) return; e.preventDefault(); handleFile(f); });
+  document.addEventListener('paste', e => {
+    const f = imageFromTransfer(e.clipboardData); if (!f) return;
+    if (dlg.open) { e.preventDefault(); handleFile(f); }
+    else if (canWrite && assets) { e.preventDefault(); openDialog(null); handleFile(f); }
+  });
+
+  const partnerOf = f => f && f.orGroup ? films.find(x => x.id !== f.id && x.orGroup === f.orGroup && x.day === f.day) : null;
+  const dialogDay = () => editing && editing.catalog ? ((CAT.ev.get($('#fSid').value) || {}).date || editing.day) : daySel.value;
+  function fillOrOptions() {
+    const sel = $('#fOr'), day = dialogDay(), self = editing && editing.id, partner = partnerOf(editing);
+    sel.replaceChildren(h('option', { value: '', text: 'Not undecided' }));
+    films.filter(x => x.day === day && x.id !== self && (!partnerOf(x) || (partner && x.id === partner.id)))
+      .sort((a, b) => (toMin(a.time) ?? 9999) - (toMin(b.time) ?? 9999))
+      .forEach(x => sel.append(h('option', { value: x.id, text: `${x.title}${x.time ? ' · ' + fmt12(x.time) : ''}` })));
+    sel.value = partner && partner.day === day ? partner.id : '';
+  }
+  daySel.addEventListener('change', fillOrOptions);
+  $('#fSid').addEventListener('change', fillOrOptions);
+  $('#fOr').addEventListener('change', () => { if ($('#fOr').value) setRadio('plan', 'maybe'); });
+  const badgeUsed = () => films.filter(x => x.ticket === 'badge' && (!editing || x.id !== editing.id)).length;
+  function syncTicketOpts() {
+    const used = badgeUsed(), outside = getRadio('kind') === 'outside';
+    if (outside && getRadio('ticket') === 'badge') setRadio('ticket', '');
+    const chosen = getRadio('ticket') === 'badge', full = used >= BADGE_MAX && !chosen;
+    $('#tBadge').disabled = outside || full;
+    $('#tBadgeLbl').textContent = `🎫 Festival badge · ${Math.min(BADGE_MAX, used + (chosen ? 1 : 0))}/${BADGE_MAX}`;
+    $('#badgeHint').textContent = outside ? 'The festival badge only covers QCinema screenings.'
+      : full ? `All ${BADGE_MAX} badge passes are assigned. Free one up on another film to use it here.` : '';
+  }
+  form.querySelectorAll('input[name="kind"], input[name="ticket"]').forEach(r => r.addEventListener('change', syncTicketOpts));
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault(); if (busy || !db || !me) return;
+    const isCat = !!(editing && editing.catalog);
+    if (getRadio('ticket') === 'badge' && (getRadio('kind') === 'outside' || badgeUsed() >= BADGE_MAX)) { showErr(getRadio('kind') === 'outside' && !isCat ? 'The festival badge only covers QCinema screenings.' : `All ${BADGE_MAX} badge passes are already assigned.`); return; }
+    let data, newId = editing ? editing.id : null, posterWrite = null, label;
+    if (isCat) {
+      const sid = $('#fSid').value || editing.sid;
+      data = { ...(planOf(me).items.get(editing.id) || {}) };
+      Object.assign(data, { sid, plan: getRadio('plan') || 'going', ticket: getRadio('ticket'), notes: $('#fNotes').value.trim(), snap: snapOf(sid) || data.snap || null, order: data.order ?? Date.now() });
+      if (assets && JSON.stringify(img || null) !== JSON.stringify(editing.image || null)) {
+        if (editing.ownImage || !editing.filmId) data.image = img;
+        else posterWrite = [editing.filmId, img];
+      }
+      newId = sid; label = editing.title;
+    } else {
+      const title = $('#fTitle').value.trim(), year = $('#fYear').value.trim();
+      if (!title) { showErr('Add a title.'); $('#fTitle').focus(); return; }
+      if (year && !/^\d{4}$/.test(year)) { showErr('Use a four-digit year, like 2026.'); $('#fYear').focus(); return; }
+      const time = $('#fTime').value, end = $('#fEnd').value;
+      if (time && end && toMin(end) <= toMin(time)) { showErr('The end time should be after the start time.'); $('#fEnd').focus(); return; }
+      data = editing ? { ...(planOf(me).items.get(editing.id) || {}) } : {};
+      Object.assign(data, { title, year, kind: getRadio('kind') || 'film', day: daySel.value, time, end,
+        venue: $('#fVenue').value.trim(), plan: getRadio('plan') || 'going', ticket: getRadio('ticket'),
+        notes: $('#fNotes').value.trim(), image: img, order: data.order ?? Date.now() });
+      label = title;
+    }
+    const orSel = $('#fOr').value, prevPartner = partnerOf(editing);
+    let partnerWrite = null, unlinkId = null;
+    if (orSel) {
+      const partner = films.find(x => x.id === orSel);
+      const gid = editing && editing.orGroup && prevPartner && prevPartner.id === orSel ? editing.orGroup : 'or-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      data.orGroup = gid; data.plan = 'maybe';
+      if (partner && (partner.orGroup !== gid || partner.plan !== 'maybe')) partnerWrite = [partner.id, { orGroup: gid, plan: 'maybe' }];
+      if (prevPartner && prevPartner.id !== orSel) unlinkId = prevPartner.id;
+    } else {
+      data.orGroup = '';
+      if (prevPartner) unlinkId = prevPartner.id;
+    }
+    $('#saveBtn').disabled = true; $('#saveBtn').textContent = 'Saving…';
+    try {
+      if (isCat && newId !== editing.id) { await itemsCol().doc(newId).set(data); await itemsCol().doc(editing.id).delete(); }
+      else if (editing) await itemsCol().doc(editing.id).set(data);
+      else await itemsCol().add(data);
+      if (posterWrite) await db.doc(`posters/${posterWrite[0]}`).set({ image: posterWrite[1] || null, by: me });
+      if (partnerWrite) await itemsCol().doc(partnerWrite[0]).update(partnerWrite[1]);
+      if (unlinkId) await itemsCol().doc(unlinkId).update({ orGroup: '' });
+      await ensureMyDoc();
+      saved = true; dlg.close(); toast(editing ? `Saved ${label}` : `Added ${label} to ${shortDay(data.day)}`);
+    } catch (err) { if (err && err.code === 'invalid_argument') { writable = false; doRefresh(); showErr("This page didn't let you save. Ask Angelo for Contributor access."); } else showErr(dbMsg(err)); }
+    finally { $('#saveBtn').disabled = busy; $('#saveBtn').textContent = 'Save'; }
+  });
+  $('#delBtn').onclick = () => { $('#delBtn').hidden = true; $('#delConfirm').hidden = false; $('#delNo').focus(); };
+  $('#delNo').onclick = () => { $('#delConfirm').hidden = true; $('#delBtn').hidden = false; };
+  $('#delYes').onclick = async () => {
+    if (!editing) return;
+    try { await itemsCol().doc(editing.id).delete(); saved = true; img = editing.ownImage ? null : img; const t = editing.title; dlg.close(); toast(`Removed ${t}`); }
+    catch (err) { showErr(dbMsg(err)); }
+  };
+
+  /* ---------- filters ---------- */
+  $('#filters').addEventListener('click', e => {
+    const b = e.target.closest('[data-f]'); if (!b) return;
+    filter = b.dataset.f;
+    document.querySelectorAll('#filters [data-f]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    try { sessionStorage.setItem('qc-filter', filter); } catch (_) {}
+    render();
+  });
+  try { const saved = sessionStorage.getItem('qc-filter'); if (saved) { filter = saved; document.querySelectorAll('#filters [data-f]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.f === saved))); } } catch (_) {}
+  $('#addBtn').onclick = () => openCatalog();
+
+  /* ---------- share image ---------- */
+  const SH = { W: 1600, H: 900, M: 48, GAP: 14, TOP: 178, COLHEAD: 72, BOTTOM: 44 };
+  const C = { night: '#0a1029', deep: '#0e1638', line: '#26346c', ink: '#eef1ff', muted: '#9aa6d4', faint: '#5f6ca3', cyan: '#14b2dc', blue: '#3d9be6', duo: '#52b6ef', sun: '#fbbd2e', rose: '#f0466e', indigo: '#2c3d92', onLight: '#071433' };
+  const HUEC = { cyan: [C.cyan, C.onLight], sun: [C.sun, C.onLight], rose: [C.rose, '#ffffff'], blue: [C.blue, C.onLight], indigo: ['#4257c4', '#ffffff'], paper: [C.ink, C.onLight] };
+  const FA = '"Archivo", "Arial Narrow", sans-serif', FB = '"Figtree", system-ui, sans-serif', FM = '"IBM Plex Mono", ui-monospace, monospace';
+  const FE = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+  const TICKET_STK = { badge: { bg: '#4257c4', emoji: '🎫' }, tobuy: { bg: C.sun, emoji: '💵' }, bought: { bg: C.cyan, emoji: '' } };
+  const cmpFilm = (a, b) => ((a.time ? 0 : 1) - (b.time ? 0 : 1)) || ((toMin(a.time) ?? 0) - (toMin(b.time) ?? 0)) || ((a.order ?? 0) - (b.order ?? 0));
+  let shareTimer = null, shareGen = 0, shareBlob = null, shareUrl = null, shareKey = '';
+  let shMaybe = false, shHandle = '';
+  let shFmt = 'x';
+  try { shMaybe = localStorage.getItem('qc-sh-maybe') === '1'; shFmt = localStorage.getItem('qc-sh-fmt') === 'phone' ? 'phone' : 'x'; } catch (_) {}
+  const viewHandle = () => (((people.get(viewing) || {}).handle) || '').trim();
+  const imgCache = new Map();
+  function loadImg(src) {
+    if (!imgCache.has(src)) imgCache.set(src, new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = src; }));
+    return imgCache.get(src);
+  }
+  function setFont(ctx, weight, size, fam, stretch, track) {
+    ctx.font = `${weight} ${size}px ${fam}`;
+    if ('fontStretch' in ctx) ctx.fontStretch = stretch || 'normal';
+    if ('letterSpacing' in ctx) ctx.letterSpacing = (track || 0) + 'px';
+  }
+  function rr(ctx, x, y, w, hh, r) {
+    ctx.beginPath();
+    if (ctx.roundRect) { ctx.roundRect(x, y, w, hh, r); return; }
+    ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + hh, r); ctx.arcTo(x + w, y + hh, x, y + hh, r); ctx.arcTo(x, y + hh, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function wrapLines(ctx, text, maxW, maxLines) {
+    const words = String(text || '').split(/\s+/).filter(Boolean); const lines = []; let cur = '';
+    for (const w of words) { const t = cur ? cur + ' ' + w : w; if (!cur || ctx.measureText(t).width <= maxW) cur = t; else { lines.push(cur); cur = w; } }
+    if (cur) lines.push(cur);
+    const out = [];
+    for (let l of lines) {
+      while (l.length > 1 && ctx.measureText(l).width > maxW) { let k = l.length - 1; while (k > 1 && ctx.measureText(l.slice(0, k)).width > maxW) k--; out.push(l.slice(0, k)); l = l.slice(k); }
+      out.push(l);
+    }
+    if (out.length > maxLines) {
+      const keep = out.slice(0, maxLines); let last = keep[maxLines - 1];
+      while (last.length && ctx.measureText(last + '…').width > maxW) last = last.slice(0, -1);
+      keep[maxLines - 1] = last.trimEnd() + '…'; return keep;
+    }
+    return out;
+  }
+  function fitLines(ctx, text, maxW, maxH, sizes, weight, fam, stretch, lh) {
+    const words = String(text || '').split(/\s+/).filter(Boolean);
+    for (const s of sizes) {
+      setFont(ctx, weight, s, fam, stretch, 0);
+      if (words.some(w => ctx.measureText(w).width > maxW)) continue;
+      const lines = wrapLines(ctx, text, maxW, 99); if (lines.length * s * lh <= maxH) return { lines, size: s };
+    }
+    const s = sizes[sizes.length - 1]; setFont(ctx, weight, s, fam, stretch, 0);
+    return { lines: wrapLines(ctx, text, maxW, Math.max(1, Math.floor(maxH / (s * lh)))), size: s };
+  }
+  function drawTicket(ctx, cx, cy, kind) {
+    const t = TICKET_STK[kind]; if (!t) return;
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(10 * Math.PI / 180);
+    ctx.shadowColor = 'rgba(7,20,51,.6)'; ctx.shadowOffsetY = 2;
+    ctx.beginPath(); ctx.arc(0, 0, 17, 0, Math.PI * 2); ctx.fillStyle = t.bg; ctx.fill();
+    ctx.shadowColor = 'transparent'; ctx.lineWidth = 2; ctx.strokeStyle = C.onLight; ctx.stroke();
+    if (t.emoji) {
+      ctx.font = `18px ${FE}`; if ('fontStretch' in ctx) ctx.fontStretch = 'normal'; if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = C.onLight; ctx.fillText(t.emoji, 0, 1);
+    } else {
+      ctx.beginPath(); ctx.moveTo(-7, 0); ctx.lineTo(-2, 5); ctx.lineTo(7, -5);
+      ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = C.onLight; ctx.stroke();
+    }
+    ctx.restore();
+  }
+  function drawPic(ctx, im, x, y, w, hh, meta) {
+    const iw = im.naturalWidth, ih = im.naturalHeight; if (!iw || !ih) return;
+    if (meta.fit === 'whole') {
+      const s0 = Math.max(w / iw, hh / ih) * 1.15;
+      if ('filter' in ctx) { ctx.save(); ctx.filter = 'blur(12px) brightness(0.55)'; ctx.drawImage(im, x + (w - iw * s0) / 2, y + (hh - ih * s0) / 2, iw * s0, ih * s0); ctx.restore(); }
+      const s = Math.min(w / iw, hh / ih); ctx.drawImage(im, x + (w - iw * s) / 2, y + (hh - ih * s) / 2, iw * s, ih * s); return;
+    }
+    const s = Math.max(w / iw, hh / ih), dw = iw * s, dh = ih * s;
+    const p = Math.max(0, Math.min(100, meta.pos != null ? +meta.pos : 50)) / 100;
+    const tall = isTall({ w: meta.w || iw, h: meta.h || ih });
+    ctx.drawImage(im, x - (dw - w) * (tall ? 0.5 : p), y - (dh - hh) * (tall ? p : 0.5), dw, dh);
+  }
+  function drawTile(ctx, x, y, w, hh, f, im) {
+    const hue = HUEC[hueFor(f)] || HUEC.cyan, maybe = f.plan === 'maybe', outside = f.kind === 'outside';
+    const lab = maybe && outside ? 'MAYBE · OUTSIDE' : maybe ? 'MAYBE' : outside ? 'OUTSIDE QCINEMA' : '';
+    ctx.save(); rr(ctx, x, y, w, hh, 12); ctx.clip();
+    if (im) {
+      ctx.fillStyle = C.deep; ctx.fillRect(x, y, w, hh);
+      drawPic(ctx, im, x, y, w, hh, f.image || {});
+      if (maybe) { ctx.fillStyle = 'rgba(10,16,41,.35)'; ctx.fillRect(x, y, w, hh); }
+      const g = ctx.createLinearGradient(0, y + hh * 0.35, 0, y + hh); g.addColorStop(0, 'rgba(10,16,41,0)'); g.addColorStop(1, 'rgba(10,16,41,.95)');
+      ctx.fillStyle = g; ctx.fillRect(x, y, w, hh);
+      setFont(ctx, 800, 16, FA, 'condensed', 0); const lines = wrapLines(ctx, f.title || '', w - 18, 2);
+      const lh = 17, base = y + hh - 10;
+      ctx.fillStyle = C.ink; lines.forEach((l, i) => ctx.fillText(l, x + 9, base - (lines.length - 1 - i) * lh));
+      if (lab) { setFont(ctx, 800, 10, FA, 'normal', 1.5); ctx.fillStyle = maybe ? C.duo : C.ink; ctx.fillText(lab, x + 9, base - lines.length * lh - 1); }
+    } else {
+      ctx.fillStyle = maybe ? C.deep : hue[0]; ctx.fillRect(x, y, w, hh);
+      ctx.strokeStyle = maybe ? hue[0] : 'rgba(7,20,51,.28)'; ctx.lineWidth = 1.5; rr(ctx, x + 6, y + 6, w - 12, hh - 12, 8); ctx.stroke();
+      const availH = hh - 40 - 12 - (lab ? 13 : 0);
+      const fit = fitLines(ctx, (f.title || 'Untitled').toUpperCase(), w - 26, availH, [26, 24, 22, 20, 18, 17, 16, 15, 14, 13, 12], 800, FA, 'condensed', 0.98);
+      const lh = fit.size * 0.98, base = y + hh - 14;
+      ctx.fillStyle = maybe ? hue[0] : hue[1];
+      fit.lines.forEach((l, i) => ctx.fillText(l, x + 13, base - (fit.lines.length - 1 - i) * lh));
+      if (lab) { setFont(ctx, 800, 10, FA, 'normal', 1.5); ctx.fillStyle = maybe ? C.duo : 'rgba(7,20,51,.7)'; ctx.fillText(lab, x + 13, base - fit.lines.length * lh - 2); }
+    }
+    ctx.restore();
+    if (f.time) {
+      setFont(ctx, 600, 12, FM, 'normal', 0); const t = fmt12(f.time); const cw = ctx.measureText(t).width + 12;
+      ctx.fillStyle = 'rgba(10,16,41,.85)'; rr(ctx, x + 8, y + 8, cw, 20, 10); ctx.fill(); ctx.fillStyle = C.ink; ctx.fillText(t, x + 14, y + 22);
+    }
+    ctx.save(); if (outside) { ctx.setLineDash([6, 5]); ctx.strokeStyle = 'rgba(238,241,255,.9)'; } else ctx.strokeStyle = 'rgba(20,178,220,.75)';
+    ctx.lineWidth = 2; rr(ctx, x + 1, y + 1, w - 2, hh - 2, 11); ctx.stroke(); ctx.restore();
+  }
+  function drawHalf(ctx, x, y, w, hh, f, im, top, tri, dim) {
+    ctx.save(); ctx.beginPath(); tri(); ctx.clip();
+    const hue = HUEC[hueFor(f)] || HUEC.cyan;
+    if (im) {
+      ctx.fillStyle = C.deep; ctx.fillRect(x, y, w, hh); drawPic(ctx, im, x, y, w, hh, f.image || {});
+      const g = top ? ctx.createLinearGradient(0, y, 0, y + hh * 0.62) : ctx.createLinearGradient(0, y + hh, 0, y + hh * 0.38);
+      g.addColorStop(0, 'rgba(10,16,41,.92)'); g.addColorStop(1, 'rgba(10,16,41,0)'); ctx.fillStyle = g; ctx.fillRect(x, y, w, hh);
+    } else { ctx.fillStyle = hue[0]; ctx.fillRect(x, y, w, hh); if (dim) { ctx.fillStyle = 'rgba(7,20,51,.2)'; ctx.fillRect(x, y, w, hh); } }
+    ctx.restore();
+  }
+  function timeChip(ctx, x, y, t, right) {
+    setFont(ctx, 600, 12, FM, 'normal', 0); const s = fmt12(t); const cw = ctx.measureText(s).width + 12, cx = right ? x - cw : x;
+    ctx.fillStyle = 'rgba(10,16,41,.85)'; rr(ctx, cx, y, cw, 20, 10); ctx.fill(); ctx.fillStyle = C.ink; ctx.fillText(s, cx + 6, y + 14);
+  }
+  function drawSplitTile(ctx, x, y, w, hh, a, b, imA, imB) {
+    ctx.save(); rr(ctx, x, y, w, hh, 12); ctx.clip();
+    drawHalf(ctx, x, y, w, hh, a, imA, true, () => { ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.lineTo(x, y + hh); ctx.closePath(); });
+    drawHalf(ctx, x, y, w, hh, b, imB, false, () => { ctx.moveTo(x + w, y); ctx.lineTo(x + w, y + hh); ctx.lineTo(x, y + hh); ctx.closePath(); }, !imA && !imB && hueFor(a) === hueFor(b));
+    ctx.strokeStyle = C.night; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x + w + 3, y - 3); ctx.lineTo(x - 3, y + hh + 3); ctx.stroke();
+    const tw = w * 0.56;
+    setFont(ctx, 800, 13, FA, 'condensed', 0.2);
+    const la = wrapLines(ctx, (a.title || '').toUpperCase(), tw, 2), lb = wrapLines(ctx, (b.title || '').toUpperCase(), tw, 2);
+    ctx.fillStyle = imA ? C.ink : (HUEC[hueFor(a)] || HUEC.cyan)[1]; la.forEach((l, i) => ctx.fillText(l, x + 9, y + 42 + i * 14));
+    ctx.fillStyle = imB ? C.ink : (HUEC[hueFor(b)] || HUEC.cyan)[1]; ctx.textAlign = 'right';
+    lb.forEach((l, i) => ctx.fillText(l, x + w - 9, y + hh - 34 - (lb.length - 1 - i) * 14)); ctx.textAlign = 'left';
+    ctx.restore();
+    if (a.time) timeChip(ctx, x + 8, y + 8, a.time, false);
+    if (b.time) timeChip(ctx, x + w - 8, y + hh - 28, b.time, true);
+    ctx.save(); ctx.translate(x + w / 2, y + hh / 2); ctx.rotate(-8 * Math.PI / 180);
+    ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI * 2); ctx.fillStyle = C.sun; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = C.onLight; ctx.stroke();
+    setFont(ctx, 900, 11, FA, 'normal', 0.5); ctx.fillStyle = C.onLight; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('OR', 0, 1); ctx.restore();
+    ctx.save(); ctx.setLineDash([6, 4]); ctx.strokeStyle = 'rgba(251,189,46,.95)'; ctx.lineWidth = 2; rr(ctx, x + 1, y + 1, w - 2, hh - 2, 11); ctx.stroke(); ctx.restore();
+  }
+  // iPhone lock-screen wallpaper: 1290 × 2796 fits every recent iPhone (19.5:9). The top ~27% stays empty
+  // for the clock and widgets, the bottom ~10% for the flashlight/camera buttons and home bar.
+  const PH = { W: 1290, H: 2796, M: 64, DATEW: 176, GAP: 14, TOP: 760, BOTTOM: 290, PAD: 12 };
+  function drawRowDate(ctx, x, y, hh, day, s) {
+    const cy = y + hh / 2;
+    setFont(ctx, 800, 18, FA, 'normal', 3); ctx.fillStyle = C.cyan; ctx.fillText('NOV', x, cy - 38);
+    setFont(ctx, 900, 84, FA, 'extra-condensed', 0); const num = String(day.d);
+    if (s === 'tbc') { ctx.strokeStyle = C.rose; ctx.lineWidth = 2.6; ctx.lineJoin = 'round'; ctx.strokeText(num, x, cy + 30); }
+    else { ctx.fillStyle = C.ink; ctx.fillText(num, x, cy + 30); }
+    setFont(ctx, 800, 18, FA, 'normal', 3); ctx.fillStyle = C.sun; const wd = day.wd.toUpperCase(); ctx.fillText(wd, x, cy + 58);
+    if (s === 'tbc') {
+      const px = x + ctx.measureText(wd).width + 8; setFont(ctx, 800, 13, FA, 'normal', 1.5); const tw = ctx.measureText('TBC').width + 14;
+      ctx.fillStyle = C.rose; rr(ctx, px, cy + 41, tw, 22, 11); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.fillText('TBC', px + 7, cy + 57);
+    }
+  }
+  function drawPhoneBody(ctx, W, H, list, loaded, logo14, logoGT, hdl) {
+    const { M, DATEW, GAP, TOP, BOTTOM, PAD } = PH;
+    const lh = 104, gh = 90;
+    const lw = logo14 ? logo14.naturalWidth * lh / logo14.naturalHeight : 0, gw = logoGT ? logoGT.naturalWidth * gh / logoGT.naturalHeight : 0;
+    let hx = (W - (lw + (lw && gw ? 44 : 0) + gw)) / 2;
+    if (logo14) { ctx.drawImage(logo14, hx, TOP, lw, lh); hx += lw + 44; }
+    if (logoGT) ctx.drawImage(logoGT, hx, TOP + (lh - gh) / 2, gw, gh);
+    ctx.textAlign = 'center';
+    if (!logo14 && !logoGT) { setFont(ctx, 900, 84, FA, 'condensed', 0); ctx.fillStyle = C.ink; ctx.fillText('QCINEMA 2026', W / 2, TOP + 86); }
+    setFont(ctx, 800, 22, FA, 'normal', 4); ctx.fillStyle = C.cyan;
+    ctx.fillText(hdl ? 'SCHEDULE FOR' : 'NOV 13–22, 2026 · QUEZON CITY', W / 2, TOP + lh + 64);
+    const big = hdl || 'MY QCINEMA SCHEDULE'; let bs = 64; setFont(ctx, 800, bs, FA, 'normal', 0);
+    while (bs > 30 && ctx.measureText(big).width > W - 2 * M) { bs -= 2; setFont(ctx, 800, bs, FA, 'normal', 0); }
+    ctx.fillStyle = hdl ? C.sun : C.ink; ctx.fillText(big, W / 2, TOP + lh + 70 + bs);
+    ctx.textAlign = 'left';
+    const rowsTop = TOP + lh + 70 + bs + 40;
+    const n = list.length, rowH = Math.max(140, Math.min(260, Math.floor((H - BOTTOM - rowsTop) / n)));
+    const tileH = rowH - 2 * PAD, x0 = M + DATEW, avail = W - M - x0;
+    const imOf = f => f.image && f.image.id ? loaded.get(f.image.id) : null;
+    const stickers = [];
+    list.forEach((r, ri) => {
+      const y = rowsTop + ri * rowH;
+      ctx.strokeStyle = C.line; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(M, y + .75); ctx.lineTo(W - M, y + .75); ctx.stroke();
+      if (r.s === 'tbc') {
+        ctx.save(); ctx.beginPath(); ctx.rect(0, y + 2, W, rowH - 2); ctx.clip(); ctx.strokeStyle = 'rgba(240,70,110,.10)'; ctx.lineWidth = 12;
+        for (let k = -rowH; k < W + rowH; k += 26) { ctx.beginPath(); ctx.moveTo(k, y + rowH); ctx.lineTo(k + rowH, y); ctx.stroke(); }
+        ctx.restore();
+      }
+      drawRowDate(ctx, M, y, rowH, r.day, r.s);
+      const ty = y + PAD;
+      if (!r.items.length) {
+        ctx.save(); ctx.setLineDash([9, 7]); ctx.strokeStyle = 'rgba(240,70,110,.75)'; ctx.lineWidth = 2; rr(ctx, x0 + 1, ty + 1, avail - 2, tileH - 2, 14); ctx.stroke(); ctx.restore();
+        setFont(ctx, 700, 28, FB, 'normal', 0); ctx.fillStyle = '#ff9bb3'; ctx.fillText('Still for confirmation', x0 + 30, ty + tileH / 2 + 10);
+        return;
+      }
+      const cols = Math.max(4, r.slots.length), tw = (avail - GAP * (cols - 1)) / cols;
+      r.slots.forEach((sl, i) => {
+        const x = x0 + i * (tw + GAP);
+        if (sl.pair) {
+          const [a, b] = sl.pair;
+          drawSplitTile(ctx, x, ty, tw, tileH, a, b, imOf(a), imOf(b));
+          if (TICKET_STK[a.ticket]) stickers.push([x + tw - 6, ty + 8, a.ticket]);
+          if (TICKET_STK[b.ticket]) stickers.push([x + 6, ty + tileH - 8, b.ticket]);
+          return;
+        }
+        drawTile(ctx, x, ty, tw, tileH, sl.f, imOf(sl.f));
+        if (TICKET_STK[sl.f.ticket]) stickers.push([x + tw - 6, ty + 8, sl.f.ticket]);
+      });
+    });
+    stickers.forEach(st => drawTicket(ctx, st[0], st[1], st[2]));
+  }
+  function drawDay(ctx, x, y, day, s) {
+    setFont(ctx, 900, 58, FA, 'extra-condensed', 0); const num = String(day.d);
+    if (s === 'tbc') { ctx.strokeStyle = C.rose; ctx.lineWidth = 2.2; ctx.lineJoin = 'round'; ctx.strokeText(num, x, y + 50); }
+    else { ctx.fillStyle = C.ink; ctx.fillText(num, x, y + 50); }
+    const nx = x + ctx.measureText(num).width + 8;
+    setFont(ctx, 800, 13, FA, 'normal', 2.5); ctx.fillStyle = C.cyan; ctx.fillText('NOV', nx, y + 26);
+    const wd = day.wd.toUpperCase(); ctx.fillStyle = C.sun; ctx.fillText(wd, nx, y + 46);
+    if (s === 'tbc') {
+      const px = nx + ctx.measureText(wd).width + 6; setFont(ctx, 800, 11, FA, 'normal', 1.5); const tw = ctx.measureText('TBC').width + 12;
+      ctx.fillStyle = C.rose; rr(ctx, px, y + 32, tw, 18, 9); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.fillText('TBC', px + 6, y + 45);
+    }
+  }
+  function scheduleShare() { clearTimeout(shareTimer); shareTimer = setTimeout(buildShare, 500); }
+  async function buildShare() {
+    const my = ++shareGen;
+    const list = DAYS.map(day => {
+      const s = dayStatus[day.id] || '';
+      const all = s === 'skip' ? [] : films.filter(f => f.day === day.id).sort(cmpFilm);
+      const pairOf = pairsByDay(all);
+      const items = all.filter(f => shMaybe || f.plan !== 'maybe' || pairOf.has(f.id));
+      return { day, s, items, slots: slotsFor(items) };
+    }).filter(r => r.s !== 'skip' && (r.items.length || r.s === 'tbc'));
+    const hdl = viewHandle();
+    const key = JSON.stringify([shFmt, list.map(r => [r.day.id, r.s, r.items.map(f => [f.title, f.time, f.plan, f.kind, f.section, f.ticket, f.image, f.orGroup])]), hdl]);
+    const imgEl = $('#shImg'), ph = $('#shPh'), cap = $('#shCap'), save = $('#shSave');
+    if (key === shareKey && (shareBlob || !list.length)) return;
+    if (!list.length || !list.some(r => r.items.length)) {
+      shareKey = key; shareBlob = null; imgEl.hidden = true; ph.hidden = false; ph.classList.toggle('tall', shFmt === 'phone'); cap.textContent = ''; save.disabled = true;
+      ph.textContent = loadedFilms ? 'Mark a few films as going and your image appears here.' : 'Building your image…';
+      return;
+    }
+    const ids = [...new Set(list.flatMap(r => r.items.map(f => f.image && f.image.id).filter(Boolean)))];
+    const loaded = new Map(await Promise.all(ids.map(async id => [id, await loadImg(imgSrc(id))])));
+    const [logo14, logoGT] = await Promise.all([loadImg('logos/qc14.png'), loadImg('logos/genreteurs.png')]);
+    try { await Promise.all([document.fonts.load(`900 58px ${FA}`), document.fonts.load(`800 20px ${FA}`), document.fonts.load(`600 20px ${FB}`), document.fonts.load(`600 12px ${FM}`)]); } catch (_) {}
+    if (my !== shareGen) return;
+
+    const phone = shFmt === 'phone';
+    const W = phone ? PH.W : SH.W, H = phone ? PH.H : SH.H;
+    const { M, GAP, TOP, COLHEAD, BOTTOM } = SH;
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d'); ctx.textBaseline = 'alphabetic';
+
+    ctx.fillStyle = C.night; ctx.fillRect(0, 0, W, H);
+    let g = ctx.createRadialGradient(W, 0, 0, W, 0, 820); g.addColorStop(0, 'rgba(240,70,110,.22)'); g.addColorStop(1, 'rgba(240,70,110,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    g = ctx.createRadialGradient(0, H, 0, 0, H, 900); g.addColorStop(0, 'rgba(20,178,220,.14)'); g.addColorStop(1, 'rgba(20,178,220,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+    if (phone) drawPhoneBody(ctx, W, H, list, loaded, logo14, logoGT, hdl);
+    else {
+    // header: festival logo, Genre'teurs logo, "Schedule for @handle"
+    let hx = M;
+    if (logo14) { const lh = 88, lw = logo14.naturalWidth * lh / logo14.naturalHeight; ctx.drawImage(logo14, hx, 38, lw, lh); hx += lw + 36; }
+    else { setFont(ctx, 900, 60, FA, 'condensed', 0); ctx.fillStyle = C.ink; ctx.fillText('QCINEMA 2026', hx, 108); hx += ctx.measureText('QCINEMA 2026').width + 36; }
+    if (logoGT) { const gh = 76, gw = logoGT.naturalWidth * gh / logoGT.naturalHeight; ctx.drawImage(logoGT, hx, 44, gw, gh); hx += gw; }
+    const rightMax = W - M - (hx + 48);
+    ctx.textAlign = 'right';
+    setFont(ctx, 800, 15, FA, 'normal', 3); ctx.fillStyle = C.cyan;
+    ctx.fillText(hdl ? 'SCHEDULE FOR' : 'NOV 13–22, 2026', W - M, 76);
+    const big = hdl || 'MY SCHEDULE';
+    let bs = 48; setFont(ctx, 800, bs, FA, 'normal', 0);
+    while (bs > 22 && ctx.measureText(big).width > rightMax) { bs -= 2; setFont(ctx, 800, bs, FA, 'normal', 0); }
+    ctx.fillStyle = hdl ? C.sun : C.ink; ctx.fillText(wrapLines(ctx, big, rightMax, 1)[0] || '', W - M, 124);
+    ctx.textAlign = 'left';
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(M, TOP - 18.5); ctx.lineTo(W - M, TOP - 18.5); ctx.stroke();
+
+    // one column per day
+    const n = list.length, colW = (W - 2 * M - GAP * (n - 1)) / n;
+    const maxK = Math.max(4, ...list.map(r => r.slots.length));
+    const tilesTop = TOP + COLHEAD, tileH = (H - BOTTOM - tilesTop - GAP * (maxK - 1)) / maxK;
+    const stickers = [];
+    list.forEach((r, ci) => {
+      const x = M + ci * (colW + GAP);
+      if (r.s === 'tbc') {
+        ctx.save(); rr(ctx, x - 6, TOP - 8, colW + 12, H - BOTTOM - TOP + 16, 12); ctx.clip();
+        ctx.strokeStyle = 'rgba(240,70,110,.10)'; ctx.lineWidth = 10;
+        for (let k = -H; k < colW + H; k += 22) { ctx.beginPath(); ctx.moveTo(x + k, H); ctx.lineTo(x + k + H, 0); ctx.stroke(); }
+        ctx.restore();
+      }
+      drawDay(ctx, x, TOP, r.day, r.s);
+      if (!r.items.length) {
+        const bh = H - BOTTOM - tilesTop;
+        ctx.save(); ctx.setLineDash([7, 6]); ctx.strokeStyle = 'rgba(240,70,110,.75)'; ctx.lineWidth = 1.5; rr(ctx, x + .75, tilesTop + .75, colW - 1.5, bh - 1.5, 12); ctx.stroke(); ctx.restore();
+        setFont(ctx, 700, 17, FB, 'normal', 0); ctx.fillStyle = '#ff9bb3'; ctx.textAlign = 'center';
+        const ls = wrapLines(ctx, 'Still for confirmation', colW - 24, 4);
+        ls.forEach((l, i) => ctx.fillText(l, x + colW / 2, tilesTop + bh / 2 - (ls.length - 1) * 11 + i * 22 + 6));
+        ctx.textAlign = 'left';
+        return;
+      }
+      const imOf = f => f.image && f.image.id ? loaded.get(f.image.id) : null;
+      r.slots.forEach((sl, i) => {
+        const y = tilesTop + i * (tileH + GAP);
+        if (sl.pair) {
+          const [a, b] = sl.pair;
+          drawSplitTile(ctx, x, y, colW, tileH, a, b, imOf(a), imOf(b));
+          if (TICKET_STK[a.ticket]) stickers.push([x + colW - 6, y + 8, a.ticket]);
+          if (TICKET_STK[b.ticket]) stickers.push([x + 6, y + tileH - 8, b.ticket]);
+          return;
+        }
+        drawTile(ctx, x, y, colW, tileH, sl.f, imOf(sl.f));
+        if (TICKET_STK[sl.f.ticket]) stickers.push([x + colW - 6, y + 8, sl.f.ticket]);
+      });
+    });
+    stickers.forEach(s => drawTicket(ctx, s[0], s[1], s[2]));
+    }
+
+    const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+    if (my !== shareGen || !blob) return;
+    shareKey = key; shareBlob = blob;
+    if (shareUrl) URL.revokeObjectURL(shareUrl);
+    shareUrl = URL.createObjectURL(blob); imgEl.src = shareUrl; imgEl.hidden = false; ph.hidden = true; imgEl.classList.toggle('tall', phone);
+    cap.textContent = `${W} × ${H} px · PNG`; save.disabled = false;
+  }
+  const shMaybeEl = $('#shMaybe'), shHandleEl = $('#shHandle');
+  shMaybeEl.checked = shMaybe; shHandleEl.disabled = true;
+  const fmtEl = document.querySelector(`input[name="shfmt"][value="${shFmt}"]`); if (fmtEl) fmtEl.checked = true;
+  $('#shPh').classList.toggle('tall', shFmt === 'phone');
+  document.querySelectorAll('input[name="shfmt"]').forEach(r => r.addEventListener('change', () => {
+    shFmt = r.value === 'phone' ? 'phone' : 'x';
+    try { localStorage.setItem('qc-sh-fmt', shFmt); } catch (_) {}
+    $('#shPh').classList.toggle('tall', shFmt === 'phone');
+    scheduleShare();
+  }));
+  shMaybeEl.onchange = () => { shMaybe = shMaybeEl.checked; try { localStorage.setItem('qc-sh-maybe', shMaybe ? '1' : '0'); } catch (_) {} scheduleShare(); };
+  let handleTimer = null;
+  shHandleEl.oninput = () => {
+    clearTimeout(handleTimer);
+    handleTimer = setTimeout(async () => {
+      if (!db || !me) return;
+      const handle = shHandleEl.value.trim();
+      try { await db.doc(`plans/${me}`).set({ ...(people.get(me) || {}), handle }); } catch (e) { refused(e); }
+    }, 700);
+  };
+  $('#shSave').onclick = async () => {
+    if (!shareBlob) return;
+    const hint = $('#shHint'); hint.textContent = '';
+    const r = await offerFile(shareBlob, shFmt === 'phone' ? 'qcinema-2026-wallpaper.png' : 'qcinema-2026-schedule.png', 'image/png');
+    if (r === 'failed') hint.textContent = "Couldn't save the image here. Right-click or long-press it to save it instead.";
+  };
+  $('#shareBtn').onclick = () => $('#share').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+
+  /* ---------- this browser's storage ----------
+     Same small API the page used before (collection/doc, set/update/delete, onSnapshot), kept in
+     localStorage. Posters and stills go in IndexedDB. Nothing leaves this device. */
+  const STORE_KEY = 'qc26-planner-v1';
+  const BACKUP_APP = 'qcinema-2026-planner';
+  const ME = 'me';
+  const KNOWN_COLS = ['plans', `plans/${ME}/items`, `plans/${ME}/days`, 'posters'];
+  function storageWorks() { try { const k = '__qc26_test'; localStorage.setItem(k, '1'); localStorage.removeItem(k); return true; } catch (_) { return false; } }
+  function makeLocalDb(ok) {
+    const clone = o => JSON.parse(JSON.stringify(o));
+    const parse = raw => { try { const j = JSON.parse(raw || '{}'); return j && typeof j === 'object' ? j : {}; } catch (_) { return {}; } };
+    let data = {};
+    if (ok) try { data = parse(localStorage.getItem(STORE_KEY)); } catch (_) {}
+    const subs = new Map();
+    const snapOf = col => ({ docs: Object.entries(data[col] || {}).map(([id, d]) => ({ id, data: () => clone(d) })), metadata: { fromCache: false } });
+    const emit = col => { for (const fn of subs.get(col) || []) { try { fn(snapOf(col)); } catch (e) { console.error(e); } } };
+    function write(col, id, fn) {
+      if (!ok) throw { code: 'no_storage' };
+      const before = data[col] ? { ...data[col] } : null;
+      const c = data[col] || (data[col] = {});
+      const next = fn(c[id]);
+      if (next === undefined) delete c[id]; else c[id] = next;
+      if (!Object.keys(c).length) delete data[col];
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); }
+      catch (_) { if (before) data[col] = before; else delete data[col]; throw { code: 'quota_exceeded' }; }
+      Promise.resolve().then(() => emit(col));
+    }
+    const newId = () => 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    const docRef = (col, id) => ({
+      id,
+      set: async d => write(col, id, () => clone(d)),
+      update: async d => write(col, id, cur => { if (!cur) throw { code: 'not_found' }; return Object.assign(clone(cur), clone(d)); }),
+      delete: async () => write(col, id, () => undefined),
+    });
+    const split = path => { const i = path.lastIndexOf('/'); return [path.slice(0, i), path.slice(i + 1)]; };
+    window.addEventListener('storage', e => {
+      if (e.key !== STORE_KEY) return;
+      data = parse(e.newValue);
+      Promise.resolve(assets && assets.loadAll().catch(() => {})).then(() => { for (const col of subs.keys()) emit(col); });
+    });
+    return {
+      collection: col => ({
+        doc: id => docRef(col, id),
+        add: async d => { const id = newId(); write(col, id, () => clone(d)); return docRef(col, id); },
+        onSnapshot(cb) {
+          (subs.get(col) || subs.set(col, new Set()).get(col)).add(cb);
+          Promise.resolve().then(() => cb(snapOf(col)));
+          return () => subs.get(col).delete(cb);
+        },
+      }),
+      doc: path => docRef(...split(path)),
+      dump: () => clone(data),
+      replace(next) {
+        if (!ok) throw { code: 'no_storage' };
+        localStorage.setItem(STORE_KEY, JSON.stringify(next));
+        data = clone(next);
+      },
+    };
+  }
+  function makeLocalAssets() {
+    const urls = new Map();
+    let dbp = null;
+    const open = () => dbp || (dbp = new Promise((res, rej) => {
+      const r = indexedDB.open('qc26-images', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('img');
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); r.onblocked = () => rej(new Error('blocked'));
+    }));
+    const run = async (mode, fn) => {
+      const d = await open();
+      return new Promise((res, rej) => {
+        const t = d.transaction('img', mode); const out = fn(t.objectStore('img'));
+        t.oncomplete = () => res(out && 'result' in out ? out.result : undefined);
+        t.onerror = t.onabort = () => rej(t.error || new Error('aborted'));
+      });
+    };
+    const toBlob = v => v && v.buf ? new Blob([v.buf], { type: v.type || 'image/jpeg' }) : v instanceof Blob ? v : null;
+    const setUrl = (id, blob) => { const old = urls.get(id); if (old) URL.revokeObjectURL(old); urls.set(id, URL.createObjectURL(blob)); };
+    const pack = async blob => ({ type: blob.type || 'image/jpeg', buf: await blob.arrayBuffer() });
+    return {
+      async loadAll() {
+        const d = await open();
+        await new Promise((res, rej) => {
+          const t = d.transaction('img', 'readonly'); const req = t.objectStore('img').openCursor();
+          req.onsuccess = () => { const c = req.result; if (!c) return; const id = String(c.key); if (!urls.has(id)) { const b = toBlob(c.value); if (b) setUrl(id, b); } c.continue(); };
+          t.oncomplete = res; t.onerror = () => rej(t.error);
+        });
+      },
+      src: id => urls.get(id) || '',
+      async upload(blob) {
+        const id = 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        const v = await pack(blob);
+        try { await run('readwrite', st => st.put(v, id)); }
+        catch (e) { throw { code: e && e.name === 'QuotaExceededError' ? 'quota_or_state' : 'upload' }; }
+        setUrl(id, blob);
+        return { id, url: urls.get(id) };
+      },
+      async delete(id) { await run('readwrite', st => st.delete(id)); const u = urls.get(id); if (u) { URL.revokeObjectURL(u); urls.delete(id); } },
+      async blob(id) { return toBlob(await run('readonly', st => st.get(id))); },
+      async replaceAll(entries) {
+        const packed = []; for (const [id, blob] of entries) packed.push([id, await pack(blob)]);
+        await run('readwrite', st => { st.clear(); for (const [id, v] of packed) st.put(v, id); });
+        for (const u of urls.values()) URL.revokeObjectURL(u);
+        urls.clear();
+      },
+    };
+  }
+
+  /* ---------- files out: share sheet on phones, a normal download elsewhere ---------- */
+  function downloadBlob(blob, name) {
+    const u = URL.createObjectURL(blob);
+    const a = h('a', { href: u, download: name, hidden: true }); document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(u), 30000);
+  }
+  async function offerFile(blob, name, type) {
+    let file = null; try { file = new File([blob], name, { type }); } catch (_) {}
+    if (file && matchMedia('(pointer: coarse)').matches && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file] }); return 'shared'; }
+      catch (e) { if (e && e.name === 'AbortError') return 'cancelled'; }
+    }
+    try { downloadBlob(blob, name); return 'downloaded'; } catch (_) { return 'failed'; }
+  }
+
+  /* ---------- backup ---------- */
+  const bkMsg = $('#bkMsg');
+  const say = (text, warn) => bkMsg.replaceChildren(h('span', { class: warn ? 'warn' : null, text }));
+  const blobToDataUrl = b => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsDataURL(b); });
+  function dataUrlToBlob(u) {
+    const m = /^data:(image\/[a-z0-9.+-]+);base64,([a-z0-9+/=\s]+)$/i.exec(u || ''); if (!m) return null;
+    const bin = atob(m[2].replace(/\s+/g, '')); const a = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+    return new Blob([a], { type: m[1] });
+  }
+  const localDate = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const countEntries = d => Object.keys((d && d[`plans/${ME}/items`]) || {}).length;
+  async function exportBackup() {
+    if (!db) return;
+    const btn = $('#bkExport'); btn.disabled = true; say('Preparing your backup…');
+    try {
+      const data = db.dump(), images = {}, ids = new Set();
+      for (const docs of Object.values(data)) for (const d of Object.values(docs || {})) if (d && d.image && d.image.id) ids.add(d.image.id);
+      let missing = 0;
+      if (assets) for (const id of ids) { const b = await assets.blob(id).catch(() => null); if (b) images[id] = await blobToDataUrl(b); else missing++; }
+      const n = countEntries(data);
+      const out = { app: BACKUP_APP, version: 1, exportedAt: new Date().toISOString(), entries: n, data, images };
+      const blob = new Blob([JSON.stringify(out)], { type: 'application/json' });
+      const r = await offerFile(blob, `qcinema-2026-backup-${localDate()}.json`, 'application/json');
+      if (r === 'failed') say("Couldn't save the backup file in this browser.", true);
+      else if (r === 'cancelled') bkMsg.replaceChildren();
+      else say(`Backup ready: ${n} ${n === 1 ? 'entry' : 'entries'}, ${Object.keys(images).length} ${Object.keys(images).length === 1 ? 'image' : 'images'}${missing ? ` (${missing} missing on this device)` : ''}.`);
+    } catch (_) { say("Couldn't make the backup. Try again.", true); }
+    finally { btn.disabled = false; }
+  }
+  async function readBackup(file) {
+    let j = null; try { j = JSON.parse(await file.text()); } catch (_) {}
+    if (!j || j.app !== BACKUP_APP || !j.data || typeof j.data !== 'object') throw new Error("That file isn't a QCinema 2026 planner backup.");
+    const data = {};
+    for (const col of KNOWN_COLS) {
+      const docs = j.data[col]; if (!docs || typeof docs !== 'object' || Array.isArray(docs)) continue;
+      const clean = {}; for (const [id, d] of Object.entries(docs)) if (d && typeof d === 'object' && !Array.isArray(d) && /^[\w.~:@+-]{1,200}$/.test(id)) clean[id] = d;
+      if (Object.keys(clean).length) data[col] = clean;
+    }
+    const images = [];
+    for (const [id, u] of Object.entries(j.images || {})) { const b = /^[\w-]{1,80}$/.test(id) ? dataUrlToBlob(u) : null; if (b) images.push([id, b]); }
+    return { data, images };
+  }
+  async function applyBackup(bk) {
+    say('Importing…');
+    try {
+      if (assets) await assets.replaceAll(bk.images);
+      db.replace(bk.data);
+      try { sessionStorage.setItem('qc-imported', String(countEntries(bk.data))); } catch (_) {}
+      location.reload();
+    } catch (e) { say(e && e.code === 'no_storage' ? dbMsg(e) : "Couldn't import that backup. This browser's storage may be full.", true); }
+  }
+  $('#bkExport').onclick = exportBackup;
+  $('#bkImport').onclick = () => { $('#bkFile').value = ''; $('#bkFile').click(); };
+  $('#bkFile').onchange = async e => {
+    const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file || !db) return;
+    let bk; try { bk = await readBackup(file); } catch (err) { say(err.message, true); return; }
+    const have = planOf(ME).items.size, n = countEntries(bk.data);
+    if (!have) { applyBackup(bk); return; }
+    bkMsg.replaceChildren(
+      h('span', { text: `Replace the ${have} ${have === 1 ? 'entry' : 'entries'} on this device with the backup's ${n}?` }),
+      h('button', { type: 'button', class: 'btn yes', onclick: () => applyBackup(bk) }, 'Replace'),
+      h('button', { type: 'button', class: 'btn', onclick: () => bkMsg.replaceChildren() }, 'Cancel'));
+  };
+
+  /* ---------- boot ---------- */
+  buildRows();
+  render();
+  (async () => {
+    const ok = storageWorks();
+    db = makeLocalDb(ok);
+    const catP = loadCatalog();
+    if (ok && 'indexedDB' in window) { try { const a = makeLocalAssets(); await a.loadAll(); assets = a; } catch (_) { assets = null; } }
+    try { if (ok && navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (_) {}
+    me = ME; viewing = ME; writable = ok;
+    await catP;
+    if (!ok) statusOverride = { text: dbMsg({ code: 'no_storage' }), warn: true };
+    else if (!CAT.ready) statusOverride = { text: "Couldn't load the festival schedule (schedule.json). Open the site from its web address rather than the file on your computer.", warn: true };
+    watchPlan(ME);
+    db.collection('plans').onSnapshot(snap => {
+      people.clear(); for (const d of snap.docs) people.set(d.id, d.data() || {});
+      shHandleEl.disabled = !writable;
+      if (document.activeElement !== shHandleEl) shHandleEl.value = (people.get(ME) || {}).handle || '';
+      refresh();
+    });
+    db.collection('posters').onSnapshot(snap => {
+      posters.clear(); for (const d of snap.docs) { const im = (d.data() || {}).image; if (im && im.id) posters.set(d.id, im); }
+      cardCache.clear(); shareKey = ''; refresh();
+    });
+    let imported = null; try { imported = sessionStorage.getItem('qc-imported'); sessionStorage.removeItem('qc-imported'); } catch (_) {}
+    if (imported != null) toast(`Backup imported: ${imported} ${imported === '1' ? 'entry' : 'entries'}`);
+    refresh();
+  })();
+})();
+</script>
+</body>
+</html>
