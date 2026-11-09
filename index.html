@@ -251,7 +251,18 @@ h1 .who.other{display:block;font-size:.48em;line-height:1.1;color:var(--sun);tex
 .crew-list{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;min-width:0;padding-block:2px}
 .crew-list::-webkit-scrollbar{display:none}
 .pchip{flex:none;display:inline-flex;align-items:center;gap:7px;padding:4px 12px 4px 4px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink);font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
-.pchip .av{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11.5px;font-weight:800;color:var(--on-light);background:var(--c,var(--cyan))}
+.pchip .av{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11.5px;font-weight:800;color:var(--on-light);background:var(--c,var(--cyan));overflow:hidden}
+.pchip .av img{width:100%;height:100%;object-fit:cover;display:block}
+/* Profile picture field (share section) */
+.avf{display:grid;gap:8px}
+.avrow{display:flex;align-items:center;gap:14px}
+.avpick{flex:none;width:64px;height:64px;padding:0;border-radius:50%;border:1.5px dashed var(--line);background:var(--deep);display:grid;place-items:center;overflow:hidden;color:var(--faint);font-size:26px;line-height:1;cursor:pointer}
+.avpick:hover{border-color:var(--faint);color:var(--ink)}
+.avpick.has{border:2px solid var(--sun)}
+.avpick img{width:100%;height:100%;object-fit:cover;display:block}
+.avpick:disabled{cursor:default;opacity:.6}
+.avbtns{display:flex;flex-wrap:wrap;gap:4px 16px}
+.avbtns .lnk:disabled{opacity:.5;cursor:default}
 .pchip b{font-family:var(--mono);font-weight:500;font-size:11.5px;color:var(--faint)}
 .pchip:hover{border-color:var(--faint)}
 .pchip[aria-pressed="true"]{background:var(--ink);color:var(--on-light);border-color:var(--ink)}
@@ -446,13 +457,20 @@ legend{padding:0;margin-bottom:6px}
 <section class="wrap share" id="share" aria-labelledby="shareTitle">
   <div class="share-copy">
     <h2 id="shareTitle">Export as Image</h2>
-    <p>Every day you're going on one picture: a 16:9 post for X, or an iPhone lock-screen wallpaper that leaves the top clear for the clock. Your handle goes in the header, and 🎫 or 💵 marks your ticket status. It updates whenever the schedule above changes.</p>
+    <p>Every day you're going on one picture: a 16:9 post for X, or an iPhone lock-screen wallpaper that leaves the top clear for the clock. Your handle and profile picture go in the header, and 🎫 or 💵 marks your ticket status. It updates whenever the schedule above changes.</p>
     <fieldset><legend>Size</legend><div class="opts">
       <label><input type="radio" name="shfmt" value="x"><span>X post · 3200 × 1800</span></label>
       <label><input type="radio" name="shfmt" value="phone"><span>iPhone wallpaper · 1290 × 2796</span></label>
     </div></fieldset>
     <label class="chk"><input type="checkbox" id="shMaybe"> Include maybes</label>
     <label class="f"><span>Your handle <em>shown on the image</em></span><input id="shHandle" maxlength="32" placeholder="@yourhandle" autocomplete="off"></label>
+    <div class="f avf"><span>Profile picture <em>shown beside your handle</em></span>
+      <div class="avrow">
+        <button type="button" class="avpick" id="avPick" aria-label="Choose a profile picture"><img id="avImg" alt="" hidden><span id="avPh" aria-hidden="true">+</span></button>
+        <div class="avbtns"><button type="button" class="lnk" id="avChoose">Add photo</button><button type="button" class="lnk danger" id="avRemove" hidden>Remove</button></div>
+      </div>
+      <input type="file" id="avFile" accept="image/*" hidden>
+    </div>
     <button type="button" class="add" id="shSave" disabled>Save image</button>
     <p class="hint" id="shHint" role="status"></p>
   </div>
@@ -776,7 +794,7 @@ legend{padding:0;margin-bottom:6px}
     canWrite = !!(db && me && viewing === me && writable);
     const ab = $('#addBtn'); ab.hidden = false;
     ab.replaceChildren(...(me && writable && db ? ['+ Add', h('span', { class: 'long', text: ' from schedule' })] : ['Festival', h('span', { class: 'long', text: ' schedule' })]));
-    render(); renderCrew();
+    render(); renderCrew(); renderAvField();
     if ($('#cat').open) renderCatalog();
   }
   function setViewing(uid) {
@@ -792,7 +810,7 @@ legend{padding:0;margin-bottom:6px}
     $('#crewList').replaceChildren(...uids.map(u => {
       const label = u === me ? 'You' : handleOf(u), n = (plans.get(u) || { items: new Map() }).items.size;
       return h('button', { type: 'button', class: 'pchip', 'aria-pressed': String(u === viewing), onclick: () => setViewing(u) },
-        h('span', { class: 'av', style: `--c:${avColor(u)}`, 'aria-hidden': 'true', text: (handleOf(u).replace(/^@/, '')[0] || '?').toUpperCase() }), label, h('b', { text: String(n) }));
+        (a => h('span', { class: 'av', style: `--c:${avColor(u)}`, 'aria-hidden': 'true', text: a ? null : (handleOf(u).replace(/^@/, '')[0] || '?').toUpperCase() }, a ? h('img', { src: a, alt: '' }) : null))(avatarOf(u)), label, h('b', { text: String(n) }));
     }));
     const other = viewing && viewing !== me;
     $('#whoTitle').textContent = other ? `${handleOf(viewing)}'s` : 'My'; $('#whoTitle').classList.toggle('other', !!other);
@@ -1642,7 +1660,7 @@ legend{padding:0;margin-bottom:6px}
       ctx.fillStyle = C.rose; rr(ctx, px, cy + 41, tw, 22, 11); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.fillText('TBC', px + 7, cy + 57);
     }
   }
-  function drawPhoneBody(ctx, W, H, list, loaded, logo14, logoGT, hdl) {
+  function drawPhoneBody(ctx, W, H, list, loaded, logo14, logoGT, hdl, avIm) {
     const { M, DATEW, GAP, TOP, BOTTOM, PAD } = PH;
     const lh = 104, gh = 90;
     const lw = logo14 ? logo14.naturalWidth * lh / logo14.naturalHeight : 0, gw = logoGT ? logoGT.naturalWidth * gh / logoGT.naturalHeight : 0;
@@ -1651,13 +1669,28 @@ legend{padding:0;margin-bottom:6px}
     if (logoGT) ctx.drawImage(logoGT, hx, TOP + (lh - gh) / 2, gw, gh);
     ctx.textAlign = 'center';
     if (!logo14 && !logoGT) { setFont(ctx, 900, 84, FA, 'condensed', 0); ctx.fillStyle = C.ink; ctx.fillText('QCINEMA 2026', W / 2, TOP + 86); }
-    setFont(ctx, 800, 22, FA, 'normal', 4); ctx.fillStyle = C.cyan;
-    ctx.fillText(hdl ? 'SCHEDULE FOR' : 'NOV 13–22, 2026 · QUEZON CITY', W / 2, TOP + lh + 64);
-    const big = hdl || 'MY QCINEMA SCHEDULE'; let bs = 64; setFont(ctx, 800, bs, FA, 'normal', 0);
-    while (bs > 30 && ctx.measureText(big).width > W - 2 * M) { bs -= 2; setFont(ctx, 800, bs, FA, 'normal', 0); }
-    ctx.fillStyle = hdl ? C.sun : C.ink; ctx.fillText(big, W / 2, TOP + lh + 70 + bs);
+    const label = hdl ? 'SCHEDULE FOR' : 'NOV 13–22, 2026 · QUEZON CITY', big = hdl || 'MY QCINEMA SCHEDULE';
+    let rowsTop;
+    if (avIm) {
+      const D = 136, G = 30, top = TOP + lh + 44, maxT = W - 2 * M - D - G;
+      let bs = 64; setFont(ctx, 800, bs, FA, 'normal', 0);
+      while (bs > 30 && ctx.measureText(big).width > maxT) { bs -= 2; setFont(ctx, 800, bs, FA, 'normal', 0); }
+      const bigT = wrapLines(ctx, big, maxT, 1)[0] || '', bw = ctx.measureText(bigT).width;
+      setFont(ctx, 800, 22, FA, 'normal', 4); const lw2 = ctx.measureText(label).width;
+      const gx = (W - (D + G + Math.max(bw, lw2))) / 2, x2 = gx + D + G, mid = top + D / 2;
+      drawAvatar(ctx, avIm, gx, top, D);
+      ctx.textAlign = 'left'; ctx.fillStyle = C.cyan; ctx.fillText(label, x2, mid - bs / 2 + 4);
+      setFont(ctx, 800, bs, FA, 'normal', 0); ctx.fillStyle = hdl ? C.sun : C.ink; ctx.fillText(bigT, x2, mid + bs / 2 + 14);
+      rowsTop = top + D + 44;
+    } else {
+      setFont(ctx, 800, 22, FA, 'normal', 4); ctx.fillStyle = C.cyan;
+      ctx.fillText(label, W / 2, TOP + lh + 64);
+      let bs = 64; setFont(ctx, 800, bs, FA, 'normal', 0);
+      while (bs > 30 && ctx.measureText(big).width > W - 2 * M) { bs -= 2; setFont(ctx, 800, bs, FA, 'normal', 0); }
+      ctx.fillStyle = hdl ? C.sun : C.ink; ctx.fillText(big, W / 2, TOP + lh + 70 + bs);
+      rowsTop = TOP + lh + 70 + bs + 40;
+    }
     ctx.textAlign = 'left';
-    const rowsTop = TOP + lh + 70 + bs + 40;
     const n = list.length, rowH = Math.max(140, Math.min(260, Math.floor((H - BOTTOM - rowsTop) / n)));
     const tileH = rowH - 2 * PAD, x0 = M + DATEW, avail = W - M - x0;
     const imOf = f => f.image && f.image.id ? loaded.get(f.image.id) : null;
@@ -1716,7 +1749,7 @@ legend{padding:0;margin-bottom:6px}
       return { day, s, items, slots: slotsFor(items) };
     }).filter(r => r.s !== 'skip' && (r.items.length || r.s === 'tbc'));
     const hdl = viewHandle();
-    const key = JSON.stringify([shFmt, list.map(r => [r.day.id, r.s, r.items.map(f => [f.title, f.time, f.plan, f.kind, f.section, f.ticket, f.image, f.orGroup])]), hdl]);
+    const key = JSON.stringify([shFmt, list.map(r => [r.day.id, r.s, r.items.map(f => [f.title, f.time, f.plan, f.kind, f.section, f.ticket, f.image, f.orGroup])]), hdl, avatarOf(viewing).length, avatarOf(viewing).slice(-48)]);
     const imgEl = $('#shImg'), ph = $('#shPh'), cap = $('#shCap'), save = $('#shSave');
     if (key === shareKey && (shareBlob || !list.length)) return;
     if (!list.length || !list.some(r => r.items.length)) {
@@ -1727,6 +1760,7 @@ legend{padding:0;margin-bottom:6px}
     const ids = [...new Set(list.flatMap(r => r.items.map(f => f.image && f.image.id).filter(Boolean)))];
     const loaded = new Map(await Promise.all(ids.map(async id => [id, await loadImg(imgSrc(id))])));
     const [logo14, logoGT] = await Promise.all([loadImg('logos/qc14.png'), loadImg('logos/genreteurs.png')]);
+    const avSrc = avatarOf(viewing), avIm = avSrc ? await loadImg(avSrc) : null;
     try { await Promise.all([document.fonts.load(`900 58px ${FA}`), document.fonts.load(`800 20px ${FA}`), document.fonts.load(`600 20px ${FB}`), document.fonts.load(`600 12px ${FM}`)]); } catch (_) {}
     if (my !== shareGen) return;
 
@@ -1740,21 +1774,23 @@ legend{padding:0;margin-bottom:6px}
     let g = ctx.createRadialGradient(W, 0, 0, W, 0, 820); g.addColorStop(0, 'rgba(240,70,110,.22)'); g.addColorStop(1, 'rgba(240,70,110,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     g = ctx.createRadialGradient(0, H, 0, 0, H, 900); g.addColorStop(0, 'rgba(20,178,220,.14)'); g.addColorStop(1, 'rgba(20,178,220,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
 
-    if (phone) drawPhoneBody(ctx, W, H, list, loaded, logo14, logoGT, hdl);
+    if (phone) drawPhoneBody(ctx, W, H, list, loaded, logo14, logoGT, hdl, avIm);
     else {
     // header: festival logo, Genre'teurs logo, "Schedule for @handle"
     let hx = M;
     if (logo14) { const lh = 88, lw = logo14.naturalWidth * lh / logo14.naturalHeight; ctx.drawImage(logo14, hx, 38, lw, lh); hx += lw + 36; }
     else { setFont(ctx, 900, 60, FA, 'condensed', 0); ctx.fillStyle = C.ink; ctx.fillText('QCINEMA 2026', hx, 108); hx += ctx.measureText('QCINEMA 2026').width + 36; }
     if (logoGT) { const gh = 76, gw = logoGT.naturalWidth * gh / logoGT.naturalHeight; ctx.drawImage(logoGT, hx, 44, gw, gh); hx += gw; }
-    const rightMax = W - M - (hx + 48);
+    const AVD = 92, tx = avIm ? W - M - AVD - 22 : W - M;   // tx: right edge of the handle text
+    if (avIm) drawAvatar(ctx, avIm, W - M - AVD, 36, AVD);
+    const rightMax = tx - (hx + 48);
     ctx.textAlign = 'right';
     setFont(ctx, 800, 15, FA, 'normal', 3); ctx.fillStyle = C.cyan;
-    ctx.fillText(hdl ? 'SCHEDULE FOR' : 'NOV 13–22, 2026', W - M, 76);
+    ctx.fillText(hdl ? 'SCHEDULE FOR' : 'NOV 13–22, 2026', tx, 76);
     const big = hdl || 'MY SCHEDULE';
     let bs = 48; setFont(ctx, 800, bs, FA, 'normal', 0);
     while (bs > 22 && ctx.measureText(big).width > rightMax) { bs -= 2; setFont(ctx, 800, bs, FA, 'normal', 0); }
-    ctx.fillStyle = hdl ? C.sun : C.ink; ctx.fillText(wrapLines(ctx, big, rightMax, 1)[0] || '', W - M, 124);
+    ctx.fillStyle = hdl ? C.sun : C.ink; ctx.fillText(wrapLines(ctx, big, rightMax, 1)[0] || '', tx, 124);
     ctx.textAlign = 'left';
     ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(M, TOP - 18.5); ctx.lineTo(W - M, TOP - 18.5); ctx.stroke();
 
@@ -1805,6 +1841,53 @@ legend{padding:0;margin-bottom:6px}
     shareUrl = URL.createObjectURL(blob); imgEl.src = shareUrl; imgEl.hidden = false; ph.hidden = true; imgEl.classList.toggle('tall', phone);
     cap.textContent = `${cv.width} × ${cv.height} px · ${phone ? 'PNG' : 'JPG'}`; save.disabled = false;
   }
+  /* ---------- profile picture ----------
+     A small square JPEG kept as a data URL in your plan doc (plans/<you>.avatar), so it's saved and
+     backed up with your schedule. */
+  const AV_RE = /^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
+  const avatarOf = uid => { const a = uid ? (people.get(uid) || {}).avatar : ''; return typeof a === 'string' && a.length < 300000 && AV_RE.test(a) ? a : ''; };
+  async function makeAvatar(file) {
+    const src = await decode(file);
+    const w0 = src.width || src.naturalWidth, h0 = src.height || src.naturalHeight;
+    if (!w0 || !h0) throw { code: 'decode' };
+    const side = Math.min(w0, h0), N = 240;
+    const sx = (w0 - side) / 2, sy = h0 > w0 ? (h0 - side) * 0.25 : (h0 - side) / 2;   // tall photos: keep the upper part, where faces usually are
+    const c = document.createElement('canvas'); c.width = N; c.height = N;
+    const ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    ctx.fillStyle = '#0a1029'; ctx.fillRect(0, 0, N, N); ctx.drawImage(src, sx, sy, side, side, 0, 0, N, N);
+    return c.toDataURL('image/jpeg', 0.82);
+  }
+  function drawAvatar(ctx, im, x, y, d) {
+    const r = d / 2, cx = x + r, cy = y + r;
+    ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.closePath(); ctx.clip();
+    ctx.fillStyle = C.deep; ctx.fillRect(x, y, d, d);
+    const iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height, k = Math.max(d / iw, d / ih);
+    ctx.drawImage(im, cx - iw * k / 2, cy - ih * k / 2, iw * k, ih * k);
+    ctx.restore();
+    ctx.beginPath(); ctx.arc(cx, cy, r + 2, 0, Math.PI * 2); ctx.lineWidth = 4; ctx.strokeStyle = C.sun; ctx.stroke();
+  }
+  function renderAvField() {
+    const a = avatarOf(me), img = $('#avImg'), can = !!(db && me && writable);
+    if (a) img.src = a; else img.removeAttribute('src');
+    img.hidden = !a; $('#avPh').hidden = !!a; $('#avPick').classList.toggle('has', !!a);
+    $('#avChoose').textContent = a ? 'Change photo' : 'Add photo'; $('#avRemove').hidden = !a;
+    for (const id of ['#avPick', '#avChoose', '#avRemove']) $(id).disabled = !can;
+  }
+  const pickAvatar = () => { $('#avFile').value = ''; $('#avFile').click(); };
+  $('#avPick').onclick = pickAvatar; $('#avChoose').onclick = pickAvatar;
+  $('#avFile').onchange = async e => {
+    const file = e.target.files && e.target.files[0]; e.target.value = '';
+    const hint = $('#shHint'); hint.textContent = '';
+    if (!file || !db || !me) return;
+    if (!file.type.startsWith('image/')) { hint.textContent = 'Choose an image file (JPG, PNG, WebP or GIF).'; return; }
+    let avatar; try { avatar = await makeAvatar(file); } catch (err) { hint.textContent = upMsg({ code: 'decode' }); return; }
+    try { await db.doc(`plans/${me}`).set({ ...(people.get(me) || {}), avatar }); toast('Profile picture updated'); } catch (err) { refused(err); }
+  };
+  $('#avRemove').onclick = async () => {
+    if (!db || !me) return;
+    const d = { ...(people.get(me) || {}) }; delete d.avatar;
+    try { await db.doc(`plans/${me}`).set(d); toast('Profile picture removed'); } catch (err) { refused(err); }
+  };
   const shMaybeEl = $('#shMaybe'), shHandleEl = $('#shHandle');
   shMaybeEl.checked = shMaybe; shHandleEl.disabled = true;
   const fmtEl = document.querySelector(`input[name="shfmt"][value="${shFmt}"]`); if (fmtEl) fmtEl.checked = true;
