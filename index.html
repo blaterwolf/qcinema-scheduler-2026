@@ -1807,20 +1807,21 @@ legend{padding:0;margin-bottom:6px}
     else {
     // header: festival logo, Genre'teurs logo, "Schedule for @handle"
     let hx = M;
-    if (logo14) { const lh = 88, lw = logo14.naturalWidth * lh / logo14.naturalHeight; ctx.drawImage(logo14, hx, 38, lw, lh); hx += lw + 36; }
-    else { setFont(ctx, 900, 60, FA, 'condensed', 0); ctx.fillStyle = C.ink; ctx.fillText('QCINEMA 2026', hx, 108); hx += ctx.measureText('QCINEMA 2026').width + 36; }
-    if (logoGT) { const gh = 76, gw = logoGT.naturalWidth * gh / logoGT.naturalHeight; ctx.drawImage(logoGT, hx, 44, gw, gh); hx += gw; }
+    const HC = 90;   // header centre line: both logos, the text block and the photo centre on it
+    if (logo14) { const lh = 88, lw = logo14.naturalWidth * lh / logo14.naturalHeight; ctx.drawImage(logo14, hx, HC - lh / 2, lw, lh); hx += lw + 36; }
+    else { setFont(ctx, 900, 60, FA, 'condensed', 0); ctx.fillStyle = C.ink; ctx.fillText('QCINEMA 2026', hx, HC + 22); hx += ctx.measureText('QCINEMA 2026').width + 36; }
+    if (logoGT) { const gh = 76, gw = logoGT.naturalWidth * gh / logoGT.naturalHeight; ctx.drawImage(logoGT, hx, HC - gh / 2, gw, gh); hx += gw; }
     const AVD = 92, tx = avIm ? W - M - AVD - 22 : W - M;   // tx: right edge of the handle text
-    if (avIm) drawAvatar(ctx, avIm, W - M - AVD, 36, AVD);
+    if (avIm) drawAvatar(ctx, avIm, W - M - AVD, HC - AVD / 2, AVD);
     const rightMax = tx - (hx + 48);
     ctx.textAlign = 'right';
     setFont(ctx, 800, 15, FA, 'normal', 3); ctx.fillStyle = C.cyan;
-    ctx.fillText(tagged(hdl ? 'SCHEDULE FOR' : 'NOV 13–22, 2026'), tx, 70);
+    ctx.fillText(tagged(hdl ? 'SCHEDULE FOR' : 'NOV 13–22, 2026'), tx, HC - 36);
     const big = hdl || 'MY SCHEDULE';
     let bs = 48; setFont(ctx, 800, bs, FA, 'normal', 0);
     while (bs > 22 && ctx.measureText(big).width > rightMax) { bs -= 2; setFont(ctx, 800, bs, FA, 'normal', 0); }
-    ctx.fillStyle = hdl ? C.sun : C.ink; ctx.fillText(wrapLines(ctx, big, rightMax, 1)[0] || '', tx, 118);
-    drawSiteLink(ctx, tx, 150, 'right', 17);   // under the handle, right-aligned with it
+    ctx.fillStyle = hdl ? C.sun : C.ink; ctx.fillText(wrapLines(ctx, big, rightMax, 1)[0] || '', tx, HC + 12);
+    drawSiteLink(ctx, tx, HC + 44, 'right', 17);   // under the handle, right-aligned with it
     ctx.textAlign = 'left';
     ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(M, TOP - 18.5); ctx.lineTo(W - M, TOP - 18.5); ctx.stroke();
 
