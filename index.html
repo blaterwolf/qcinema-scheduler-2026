@@ -224,6 +224,9 @@ body.is-dragging .day:not(.drop-on){opacity:.85}
 .share h2{margin:0;font-family:var(--display);font-stretch:78%;font-weight:850;font-size:clamp(34px,4.6vw,52px);line-height:.92;text-transform:uppercase;text-wrap:balance}
 .share-copy p{margin:0;color:var(--muted);max-width:42ch}
 .chk{display:flex;align-items:center;gap:10px;font-weight:600;cursor:pointer;width:max-content}
+.chk:has(input:disabled){opacity:.5;cursor:default}
+.share-copy p.shfilter{color:var(--sun);font-size:13.5px}
+.shfilter .lnk{margin-left:6px}
 .chk input{width:18px;height:18px;padding:0;accent-color:var(--sun)}
 .share .add{justify-self:start}
 .add:disabled{opacity:.5;cursor:default;filter:none}
@@ -457,12 +460,13 @@ legend{padding:0;margin-bottom:6px}
 <section class="wrap share" id="share" aria-labelledby="shareTitle">
   <div class="share-copy">
     <h2 id="shareTitle">Export as Image</h2>
-    <p>Every day you're going on one picture: a 16:9 post for X, or an iPhone lock-screen wallpaper that leaves the top clear for the clock. Your handle and profile picture go in the header, and 🎫 or 💵 marks your ticket status. It updates whenever the schedule above changes.</p>
+    <p>Every day you're going on one picture: a 16:9 post for X, or an iPhone lock-screen wallpaper that leaves the top clear for the clock. Your handle and profile picture go in the header, a link to the planner goes at the bottom, and 🎫 or 💵 marks your ticket status. It updates whenever the schedule above changes.</p>
     <fieldset><legend>Size</legend><div class="opts">
       <label><input type="radio" name="shfmt" value="x"><span>X post · 3200 × 1800</span></label>
       <label><input type="radio" name="shfmt" value="phone"><span>iPhone wallpaper · 1290 × 2796</span></label>
     </div></fieldset>
     <label class="chk"><input type="checkbox" id="shMaybe"> Include maybes</label>
+    <p class="shfilter" id="shFilter" role="status" hidden></p>
     <label class="f"><span>Your handle <em>shown on the image</em></span><input id="shHandle" maxlength="32" placeholder="@yourhandle" autocomplete="off"></label>
     <div class="f avf"><span>Profile picture <em>shown beside your handle</em></span>
       <div class="avrow">
@@ -1500,7 +1504,7 @@ legend{padding:0;margin-bottom:6px}
   $('#addBtn').onclick = () => openCatalog();
 
   /* ---------- share image ---------- */
-  const SH = { W: 1600, H: 900, M: 48, GAP: 14, TOP: 178, COLHEAD: 72, BOTTOM: 44 };
+  const SH = { W: 1600, H: 900, M: 48, GAP: 14, TOP: 184, COLHEAD: 72, BOTTOM: 44 };
   const C = { night: '#0a1029', deep: '#0e1638', line: '#26346c', ink: '#eef1ff', muted: '#9aa6d4', faint: '#5f6ca3', cyan: '#14b2dc', blue: '#3d9be6', duo: '#52b6ef', sun: '#fbbd2e', rose: '#f0466e', indigo: '#2c3d92', onLight: '#071433' };
   const HUEC = { cyan: [C.cyan, C.onLight], sun: [C.sun, C.onLight], rose: [C.rose, '#ffffff'], blue: [C.blue, C.onLight], indigo: ['#4257c4', '#ffffff'], paper: [C.ink, C.onLight] };
   const FA = '"Archivo", "Arial Narrow", sans-serif', FB = '"Figtree", system-ui, sans-serif', FM = '"IBM Plex Mono", ui-monospace, monospace';
@@ -1669,7 +1673,7 @@ legend{padding:0;margin-bottom:6px}
     if (logoGT) ctx.drawImage(logoGT, hx, TOP + (lh - gh) / 2, gw, gh);
     ctx.textAlign = 'center';
     if (!logo14 && !logoGT) { setFont(ctx, 900, 84, FA, 'condensed', 0); ctx.fillStyle = C.ink; ctx.fillText('QCINEMA 2026', W / 2, TOP + 86); }
-    const label = hdl ? 'SCHEDULE FOR' : 'NOV 13–22, 2026 · QUEZON CITY', big = hdl || 'MY QCINEMA SCHEDULE';
+    const label = tagged(hdl ? 'SCHEDULE FOR' : 'NOV 13–22, 2026 · QUEZON CITY'), big = hdl || 'MY QCINEMA SCHEDULE';
     let rowsTop;
     if (avIm) {
       const D = 136, G = 30, top = TOP + lh + 44, maxT = W - 2 * M - D - G;
@@ -1738,23 +1742,48 @@ legend{padding:0;margin-bottom:6px}
       ctx.fillStyle = C.rose; rr(ctx, px, y + 32, tw, 18, 9); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.fillText('TBC', px + 6, y + 45);
     }
   }
-  function scheduleShare() { clearTimeout(shareTimer); shareTimer = setTimeout(buildShare, 500); }
+  const FILTER_TAG = { maybe: 'MAYBES', badge: 'BADGE SCREENINGS', tobuy: 'TICKETS TO BUY', bought: 'TICKETS BOUGHT', outside: 'OUTSIDE QCINEMA' };
+  const tagged = t => FILTER_TAG[filter] ? `${FILTER_TAG[filter]} · ${t}` : t;
+  function renderShareFilter() {
+    const el = $('#shFilter'), mb = $('#shMaybe');
+    mb.disabled = filter === 'going' || filter === 'maybe';
+    if (filter === 'all') { el.hidden = true; return; }
+    const chip = document.querySelector(`#filters [data-f="${filter}"]`);
+    const name = chip && chip.firstChild ? chip.firstChild.textContent.trim() : filter;
+    el.replaceChildren(h('span', { text: `Showing only ${name}, like the filter at the top.` }),
+      h('button', { type: 'button', class: 'lnk', onclick: () => document.querySelector('#filters [data-f="all"]').click() }, 'Show everything'));
+    el.hidden = false;
+  }
+  // "Plan yours at …" line: under the handle on the X post; centred just above the wallpaper's bottom clear zone
+  // (between the lock screen's flashlight and camera buttons).
+  const SITE_LINK = 'blaterwolf.github.io/qcinema-scheduler-2026';
+  function drawSiteLink(ctx, x, y, align, size) {
+    const pre = 'Plan yours at ';
+    setFont(ctx, 600, size, FB, 'normal', 0); const pw = ctx.measureText(pre).width;
+    setFont(ctx, 700, size, FB, 'normal', 0); const uw = ctx.measureText(SITE_LINK).width;
+    const x0 = align === 'right' ? x - pw - uw : align === 'center' ? x - (pw + uw) / 2 : x;
+    ctx.textAlign = 'left';
+    setFont(ctx, 600, size, FB, 'normal', 0); ctx.fillStyle = C.muted; ctx.fillText(pre, x0, y);
+    setFont(ctx, 700, size, FB, 'normal', 0); ctx.fillStyle = C.cyan; ctx.fillText(SITE_LINK, x0 + pw, y);
+  }
+  function scheduleShare() { renderShareFilter(); clearTimeout(shareTimer); shareTimer = setTimeout(buildShare, 500); }
   async function buildShare() {
     const my = ++shareGen;
     const list = DAYS.map(day => {
       const s = dayStatus[day.id] || '';
       const all = s === 'skip' ? [] : films.filter(f => f.day === day.id).sort(cmpFilm);
       const pairOf = pairsByDay(all);
-      const items = all.filter(f => shMaybe || f.plan !== 'maybe' || pairOf.has(f.id));
-      return { day, s, items, slots: slotsFor(items) };
-    }).filter(r => r.s !== 'skip' && (r.items.length || r.s === 'tbc'));
+      const pool = all.filter(f => shMaybe || filter === 'maybe' || f.plan !== 'maybe' || pairOf.has(f.id));
+      const slots = slotsFor(pool, filter === 'all' ? null : matches);   // same rule as the page: a split card stays if either side matches
+      return { day, s, items: slots.flatMap(sl => sl.pair || [sl.f]), slots };
+    }).filter(r => r.s !== 'skip' && (r.items.length || (r.s === 'tbc' && filter === 'all')));
     const hdl = viewHandle();
-    const key = JSON.stringify([shFmt, list.map(r => [r.day.id, r.s, r.items.map(f => [f.title, f.time, f.plan, f.kind, f.section, f.ticket, f.image, f.orGroup])]), hdl, avatarOf(viewing).length, avatarOf(viewing).slice(-48)]);
+    const key = JSON.stringify([shFmt, filter, list.map(r => [r.day.id, r.s, r.items.map(f => [f.title, f.time, f.plan, f.kind, f.section, f.ticket, f.image, f.orGroup])]), hdl, avatarOf(viewing).length, avatarOf(viewing).slice(-48)]);
     const imgEl = $('#shImg'), ph = $('#shPh'), cap = $('#shCap'), save = $('#shSave');
     if (key === shareKey && (shareBlob || !list.length)) return;
     if (!list.length || !list.some(r => r.items.length)) {
       shareKey = key; shareBlob = null; imgEl.hidden = true; ph.hidden = false; ph.classList.toggle('tall', shFmt === 'phone'); cap.textContent = ''; save.disabled = true;
-      ph.textContent = loadedFilms ? 'Mark a few films as going and your image appears here.' : 'Building your image…';
+      ph.textContent = !loadedFilms ? 'Building your image…' : filter !== 'all' ? 'Nothing in your schedule matches this filter.' : 'Mark a few films as going and your image appears here.';
       return;
     }
     const ids = [...new Set(list.flatMap(r => r.items.map(f => f.image && f.image.id).filter(Boolean)))];
@@ -1786,11 +1815,12 @@ legend{padding:0;margin-bottom:6px}
     const rightMax = tx - (hx + 48);
     ctx.textAlign = 'right';
     setFont(ctx, 800, 15, FA, 'normal', 3); ctx.fillStyle = C.cyan;
-    ctx.fillText(hdl ? 'SCHEDULE FOR' : 'NOV 13–22, 2026', tx, 76);
+    ctx.fillText(tagged(hdl ? 'SCHEDULE FOR' : 'NOV 13–22, 2026'), tx, 70);
     const big = hdl || 'MY SCHEDULE';
     let bs = 48; setFont(ctx, 800, bs, FA, 'normal', 0);
     while (bs > 22 && ctx.measureText(big).width > rightMax) { bs -= 2; setFont(ctx, 800, bs, FA, 'normal', 0); }
-    ctx.fillStyle = hdl ? C.sun : C.ink; ctx.fillText(wrapLines(ctx, big, rightMax, 1)[0] || '', tx, 124);
+    ctx.fillStyle = hdl ? C.sun : C.ink; ctx.fillText(wrapLines(ctx, big, rightMax, 1)[0] || '', tx, 118);
+    drawSiteLink(ctx, tx, 150, 'right', 17);   // under the handle, right-aligned with it
     ctx.textAlign = 'left';
     ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(M, TOP - 18.5); ctx.lineTo(W - M, TOP - 18.5); ctx.stroke();
 
@@ -1834,6 +1864,7 @@ legend{padding:0;margin-bottom:6px}
     stickers.forEach(s => drawTicket(ctx, s[0], s[1], s[2]));
     }
 
+    if (phone) drawSiteLink(ctx, W / 2, H - PH.BOTTOM + 58, 'center', 26);
     const blob = await new Promise(res => phone ? cv.toBlob(res, 'image/png') : cv.toBlob(res, 'image/jpeg', 0.95));   // X post: high-quality JPEG (a 3200 × 1800 PNG runs past X's 5 MB photo limit)
     if (my !== shareGen || !blob) return;
     shareKey = key; shareBlob = blob;
