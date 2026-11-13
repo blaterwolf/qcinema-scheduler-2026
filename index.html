@@ -237,6 +237,10 @@ body.is-dragging .day:not(.drop-on){opacity:.85}
 .share-fig img{width:100%;max-width:100%;height:auto;border-radius:12px;border:1px solid var(--line);background:var(--deep)}
 .share-ph.tall{aspect-ratio:1290/2796;max-width:380px}
 .share-ph{width:100%;max-width:100%;aspect-ratio:16/9;display:grid;place-items:center;border:1.5px dashed var(--line);border-radius:12px;color:var(--faint);font-size:14px;text-align:center;padding:16px}
+/* One-page PDF sheet (reuses the share section layout) */
+.share-ph.sheetp{aspect-ratio:595/842;max-width:420px;background:#fff;border-color:var(--line);color:#5b668f}
+.share-ph.sheetp.letter{aspect-ratio:612/792}
+.share-fig img.sheet-img{max-width:420px;background:#fff}
 .share-fig figcaption{font-family:var(--mono);font-size:12px;color:var(--faint)}
 #shareBtn{flex:none}
 @media (max-width:720px){ .share{grid-template-columns:minmax(0,1fr)} }
@@ -482,6 +486,25 @@ legend{padding:0;margin-bottom:6px}
     <div class="share-ph" id="shPh">Building your image…</div>
     <img id="shImg" alt="Your QCinema 2026 schedule as one image" hidden>
     <figcaption id="shCap"></figcaption>
+  </figure>
+</section>
+
+<section class="wrap share sheet" id="sheet" aria-labelledby="sheetTitle">
+  <div class="share-copy">
+    <h2 id="sheetTitle">Print sheet</h2>
+    <p>Your schedule on one printable page: each screening with its time and cinema, which ones use your festival badge, and a checklist of the tickets you still need to buy. It shows what the filter at the top shows.</p>
+    <fieldset><legend>Paper</legend><div class="opts">
+      <label><input type="radio" name="paper" value="a4"><span>A4</span></label>
+      <label><input type="radio" name="paper" value="letter"><span>Letter (short bond)</span></label>
+    </div></fieldset>
+    <p class="shfilter" id="pdfFilter" role="status" hidden></p>
+    <button type="button" class="add" id="pdfSave" disabled>Download PDF</button>
+    <p class="hint" id="pdfHint" role="status"></p>
+  </div>
+  <figure class="share-fig">
+    <div class="share-ph sheetp" id="pdfPh">Building your sheet…</div>
+    <img id="pdfImg" class="sheet-img" alt="Preview of your one-page schedule sheet" hidden>
+    <figcaption id="pdfCap"></figcaption>
   </figure>
 </section>
 
@@ -1766,7 +1789,7 @@ legend{padding:0;margin-bottom:6px}
     setFont(ctx, 600, size, FB, 'normal', 0); ctx.fillStyle = C.muted; ctx.fillText(pre, x0, y);
     setFont(ctx, 700, size, FB, 'normal', 0); ctx.fillStyle = C.cyan; ctx.fillText(SITE_LINK, x0 + pw, y);
   }
-  function scheduleShare() { renderShareFilter(); clearTimeout(shareTimer); shareTimer = setTimeout(buildShare, 500); }
+  function scheduleShare() { renderShareFilter(); clearTimeout(shareTimer); shareTimer = setTimeout(buildShare, 500); scheduleSheet(); }
   async function buildShare() {
     const my = ++shareGen;
     const list = DAYS.map(day => {
@@ -1919,6 +1942,230 @@ legend{padding:0;margin-bottom:6px}
     if (!db || !me) return;
     const d = { ...(people.get(me) || {}) }; delete d.avatar;
     try { await db.doc(`plans/${me}`).set(d); toast('Profile picture removed'); } catch (err) { refused(err); }
+  };
+  /* ---------- one-page PDF sheet ----------
+     Drawn on a canvas in points (1/72 inch). The preview renders small; Download renders the same page at 300 dpi,
+     saves it as a JPEG and wraps that in a one-page PDF (no library needed). Shows what the filter chips show. */
+  const PAPER = { a4: { w: 595.28, h: 841.89, label: 'A4' }, letter: { w: 612, h: 792, label: 'Letter' } };
+  let paper = 'a4'; try { if (localStorage.getItem('qc-pdf-paper') === 'letter') paper = 'letter'; } catch (_) {}
+  const SC = { ink: '#0a1029', muted: '#56618a', faint: '#8d96b8', line: '#dfe3f1', zebra: '#f6f7fc' };
+  const TKT = { badge: ['🎫 Badge', '#e6e9fb', '#2c3d92'], tobuy: ['💵 To buy', '#fff1c7', '#6e4a00'], bought: ['✓ Bought', '#d9f3fa', '#0a627b'] };
+  const TAGC = { MAYBE: '#2f7fd0', 'OUTSIDE QCINEMA': '#4a4f66', UNDECIDED: '#d6335a', 'Q&A': '#2c3d92', TALK: '#d6335a' };
+  function sheetData() {
+    const pick = f => filter === 'all' || matches(f);
+    const days = DAYS.map(day => {
+      const all = films.filter(f => f.day === day.id).sort(cmpFilm), pairOf = pairsByDay(all);
+      return { day, items: all.filter(pick).map(f => ({ f, undecided: pairOf.has(f.id) })) };
+    }).filter(r => r.items.length);
+    const list = days.flatMap(r => r.items.map(x => x.f));
+    return { days, list, toBuy: list.filter(f => f.ticket === 'tobuy'), count: k => list.filter(f => f.ticket === k).length };
+  }
+  const filterName = () => { const c = document.querySelector(`#filters [data-f="${filter}"]`); return c && c.firstChild ? c.firstChild.textContent.trim() : filter; };
+  const fit1 = (ctx, t, w) => wrapLines(ctx, t, w, 1)[0] || '';
+  function sheetAvatar(ctx, im, x, y, d) {
+    const r = d / 2, cx = x + r, cy = y + r;
+    ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
+    const iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height, k = Math.max(d / iw, d / ih);
+    ctx.drawImage(im, cx - iw * k / 2, cy - ih * k / 2, iw * k, ih * k); ctx.restore();
+    ctx.beginPath(); ctx.arc(cx, cy, r + 1, 0, Math.PI * 2); ctx.lineWidth = 2; ctx.strokeStyle = C.sun; ctx.stroke();
+  }
+  // Draws the page (or, with dry = true, only measures it) at text scale s. Returns the y where the content ends.
+  function drawSheet(ctx, P, data, logos, avIm, s, dry) {
+    const W = P.w, M = 30, CW = W - 2 * M;
+    let y = M;
+    // header band: logos left, "Schedule for @handle" and photo right, all on one centre line
+    const BH = 60, cy = y + BH / 2;
+    if (!dry) {
+      ctx.fillStyle = C.night; rr(ctx, M, y, CW, BH, 10); ctx.fill();
+      let hx = M + 16;
+      if (logos[0]) { const lh = 34, lw = logos[0].naturalWidth * lh / logos[0].naturalHeight; ctx.drawImage(logos[0], hx, cy - lh / 2, lw, lh); hx += lw + 14; }
+      if (logos[1]) { const gh = 28, gw = logos[1].naturalWidth * gh / logos[1].naturalHeight; ctx.drawImage(logos[1], hx, cy - gh / 2, gw, gh); hx += gw; }
+      let tx = M + CW - 16;
+      if (avIm) { sheetAvatar(ctx, avIm, tx - 38, cy - 19, 38); tx -= 38 + 11; }
+      const hdl = viewHandle();
+      ctx.textAlign = 'right';
+      setFont(ctx, 800, 7, FA, 'normal', 1.6); ctx.fillStyle = C.cyan; ctx.fillText(tagged(hdl ? 'SCHEDULE FOR' : 'NOV 13–22, 2026'), tx, cy - 5);
+      let hs = 19; setFont(ctx, 800, hs, FA, 'normal', 0);
+      const big = hdl || 'MY QCINEMA SCHEDULE';
+      while (hs > 11 && ctx.measureText(big).width > tx - hx - 24) { hs -= 1; setFont(ctx, 800, hs, FA, 'normal', 0); }
+      ctx.fillStyle = hdl ? C.sun : '#ffffff'; ctx.fillText(big, tx, cy + 13);
+      ctx.textAlign = 'left';
+    }
+    y += BH + 15;
+    // summary line
+    const sum = [`${data.list.length} ${data.list.length === 1 ? 'entry' : 'entries'}`, `🎫 ${data.count('badge')} of ${BADGE_MAX} badge passes`, `💵 ${data.toBuy.length} to buy`, `✓ ${data.count('bought')} bought`];
+    if (filter !== 'all') sum.unshift(`Filter: ${filterName()}`);
+    if (!dry) { setFont(ctx, 600, 8.5, FB, 'normal', 0); ctx.fillStyle = SC.muted; ctx.fillText(sum.join('   ·   '), M, y); }
+    y += 13;
+
+    // schedule table: day | time | film or event (+ tags) | cinema | ticket
+    const fs = 8.6 * s, lh = 11 * s, pad = 4.2 * s;
+    const cDay = M, cTime = M + 40, cTitle = cTime + 70 * Math.max(s, 0.85), cTkt = M + CW - 58, cCin = cTkt - 150;
+    const tW = cCin - cTitle - 10, cinW = cTkt - cCin - 8;
+    if (!dry) {
+      setFont(ctx, 800, 6.4, FA, 'normal', 1.2); ctx.fillStyle = SC.faint;
+      [['DAY', cDay], ['TIME', cTime], ['FILM / EVENT', cTitle], ['CINEMA', cCin], ['TICKET', cTkt]].forEach(([t, x]) => ctx.fillText(t, x, y + 8));
+    }
+    y += 12;
+    let zebra = false;
+    data.days.forEach(r => {
+      if (!dry) { ctx.strokeStyle = SC.ink; ctx.globalAlpha = 0.85; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(M, y); ctx.lineTo(M + CW, y); ctx.stroke(); ctx.globalAlpha = 1; }
+      const top = y;
+      r.items.forEach(({ f, undecided }, i) => {
+        setFont(ctx, 700, fs, FB, 'normal', 0);
+        const yr = f.year ? ` (${f.year})` : '';
+        const tl = wrapLines(ctx, (f.title || 'Untitled') + yr, tW, 2);
+        const tags = [...(f.plan === 'maybe' ? ['MAYBE'] : []), ...(f.kind === 'outside' ? ['OUTSIDE QCINEMA'] : []), ...(f.kind === 'talk' ? ['TALK'] : []), ...(undecided ? ['UNDECIDED'] : []), ...((f.extras || []).includes('Q&A') ? ['Q&A'] : [])];
+        setFont(ctx, 600, 7.8 * s, FB, 'normal', 0);
+        const cl = wrapLines(ctx, f.venue || '—', cinW, 2);
+        const rowH = Math.max(tl.length * lh + (tags.length ? 9 * s : 0), cl.length * lh, 14 * s) + 2 * pad;
+        if (!dry) {
+          if (zebra) { ctx.fillStyle = SC.zebra; ctx.fillRect(cTime - 4, y, M + CW - cTime + 4, rowH); }
+          const by = y + pad + fs;
+          setFont(ctx, 600, 7.8 * s, FM, 'normal', 0); ctx.fillStyle = SC.ink;
+          ctx.fillText(f.time ? fmtRange(f.time, f.end) : 'Time TBA', cTime, by);
+          setFont(ctx, 700, fs, FB, 'normal', 0); ctx.fillStyle = SC.ink;
+          tl.forEach((t, k) => ctx.fillText(t, cTitle, by + k * lh));
+          if (tags.length) {
+            let gx = cTitle; setFont(ctx, 800, 6 * s, FA, 'normal', 0.8);
+            tags.forEach(t => { ctx.fillStyle = TAGC[t] || SC.muted; ctx.fillText(t, gx, by + tl.length * lh + 0.5 * s); gx += ctx.measureText(t).width + 8; });
+          }
+          setFont(ctx, 600, 7.8 * s, FB, 'normal', 0); ctx.fillStyle = SC.muted;
+          cl.forEach((t, k) => ctx.fillText(t, cCin, by + k * lh));
+          const tk = TKT[f.ticket];
+          if (tk) {
+            setFont(ctx, 700, 7.6 * s, FB, 'normal', 0); const pw = ctx.measureText(tk[0]).width + 10 * s, ph = 13 * s;
+            ctx.fillStyle = tk[1]; rr(ctx, cTkt, by - fs + 0.5 * s, pw, ph, ph / 2); ctx.fill();
+            ctx.fillStyle = tk[2]; ctx.fillText(tk[0], cTkt + 5 * s, by - fs + 0.5 * s + ph / 2 + 2.7 * s);
+          } else { setFont(ctx, 600, 8 * s, FB, 'normal', 0); ctx.fillStyle = SC.faint; ctx.fillText('—', cTkt + 4, by); }
+        }
+        y += rowH; zebra = !zebra;
+      });
+      if (!dry) {   // day label in the left gutter, at the top of its group
+        setFont(ctx, 800, 6.4 * Math.max(s, 0.8), FA, 'normal', 1.1); ctx.fillStyle = r.day.wd === 'Sat' || r.day.wd === 'Sun' ? '#c98a00' : '#0b8db3';
+        ctx.fillText(r.day.wd.toUpperCase(), cDay, top + 10 * Math.max(s, 0.8));
+        setFont(ctx, 850, 17 * Math.max(s, 0.8), FA, 'condensed', 0); ctx.fillStyle = SC.ink;
+        ctx.fillText(String(r.day.d), cDay, top + 27 * Math.max(s, 0.8));
+      }
+      y = Math.max(y, top + 31 * Math.max(s, 0.8));
+    });
+    if (!dry) { ctx.strokeStyle = SC.ink; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(M, y); ctx.lineTo(M + CW, y); ctx.stroke(); }
+
+    // checklist of tickets to buy, in two columns
+    y += 18;
+    if (!dry) {
+      setFont(ctx, 800, 10, FA, 'normal', 1.4); ctx.fillStyle = SC.ink; ctx.fillText('TICKETS TO BUY', M, y);
+      const w0 = ctx.measureText('TICKETS TO BUY').width;
+      setFont(ctx, 600, 8, FB, 'normal', 0); ctx.fillStyle = SC.muted;
+      ctx.fillText(data.toBuy.length ? `${data.toBuy.length} · tick each one off once you have it` : 'Nothing left to buy in this selection.', M + w0 + 10, y);
+    }
+    y += 10;
+    const colW = (CW - 16) / 2, rows = Math.ceil(data.toBuy.length / 2), ih = 23 * s;
+    data.toBuy.forEach((f, i) => {
+      const col = i < rows ? 0 : 1, row = col ? i - rows : i, x = M + col * (colW + 16), yy = y + row * ih;
+      if (dry) return;
+      const bs = 8.5 * s; ctx.strokeStyle = SC.ink; ctx.lineWidth = 0.9; rr(ctx, x, yy + 3 * s, bs, bs, 1.5); ctx.stroke();
+      setFont(ctx, 700, 8.4 * s, FB, 'normal', 0); ctx.fillStyle = SC.ink;
+      ctx.fillText(fit1(ctx, (f.title || 'Untitled') + (f.year ? ` (${f.year})` : ''), colW - bs - 8), x + bs + 7, yy + 3 * s + bs - 0.5 * s);
+      setFont(ctx, 600, 7.4 * s, FB, 'normal', 0); ctx.fillStyle = SC.muted;
+      const d = dayOf(f.day), when = [d ? `${d.wd}, Nov ${d.d}` : '', f.time ? fmt12(f.time) : '', f.venue || ''].filter(Boolean).join(' · ');
+      ctx.fillText(fit1(ctx, when, colW - bs - 8), x + bs + 7, yy + 3 * s + bs + 9.5 * s);
+    });
+    y += rows * ih;
+    return y;
+  }
+  async function renderSheet(k) {
+    const P = PAPER[paper];
+    const [l14, lgt] = await Promise.all([loadImg('logos/qc14.png'), loadImg('logos/genreteurs.png')]);
+    const avSrc = avatarOf(viewing), avIm = avSrc ? await loadImg(avSrc) : null;
+    try { await Promise.all([document.fonts.load(`800 18px ${FA}`), document.fonts.load(`700 9px ${FB}`), document.fonts.load(`600 9px ${FM}`)]); } catch (_) {}
+    const data = sheetData();
+    const cv = document.createElement('canvas'); cv.width = Math.round(P.w * k); cv.height = Math.round(P.h * k);
+    const ctx = cv.getContext('2d'); ctx.scale(k, k); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.textBaseline = 'alphabetic';
+    const bottom = P.h - 30 - 20;   // leave room for the footer
+    let s = 1; while (s > 0.5 && drawSheet(ctx, P, data, [l14, lgt], avIm, s, true) > bottom) s -= 0.02;
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, P.w, P.h);
+    drawSheet(ctx, P, data, [l14, lgt], avIm, s, false);
+    // footer
+    const now = new Date(), asOf = new Date(CAT.fetchedAt);
+    setFont(ctx, 600, 7.6, FB, 'normal', 0); ctx.fillStyle = SC.faint;
+    ctx.fillText('Plan yours at ', 30, P.h - 24); const pw = ctx.measureText('Plan yours at ').width;
+    setFont(ctx, 700, 7.6, FB, 'normal', 0); ctx.fillStyle = '#0b8db3'; ctx.fillText(SITE_LINK, 30 + pw, P.h - 24);
+    setFont(ctx, 600, 7.6, FB, 'normal', 0); ctx.fillStyle = SC.faint; ctx.textAlign = 'right';
+    ctx.fillText(['Times are Philippine time', isNaN(asOf) ? '' : `schedule as of ${asOf.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`, `printed ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`].filter(Boolean).join(' · '), P.w - 30, P.h - 24);
+    ctx.textAlign = 'left';
+    return { cv, data, s };
+  }
+  // A one-page PDF around a JPEG of the page.
+  function jpegPdf(jpg, pxW, pxH, P) {
+    const enc = new TextEncoder(), parts = [], offs = []; let len = 0;
+    const put = x => { const b = typeof x === 'string' ? enc.encode(x) : x; parts.push(b); len += b.length; };
+    const obj = (n, f) => { offs[n] = len; put(`${n} 0 obj\n`); f(); put('\nendobj\n'); };
+    const w = P.w.toFixed(2), h = P.h.toFixed(2), draw = `q ${w} 0 0 ${h} 0 0 cm /Im0 Do Q`;
+    put('%PDF-1.4\n');
+    obj(1, () => put('<< /Type /Catalog /Pages 2 0 R >>'));
+    obj(2, () => put('<< /Type /Pages /Kids [3 0 R] /Count 1 >>'));
+    obj(3, () => put(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${w} ${h}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>`));
+    obj(4, () => { put(`<< /Type /XObject /Subtype /Image /Width ${pxW} /Height ${pxH} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n`); put(jpg); put('\nendstream'); });
+    obj(5, () => put(`<< /Length ${draw.length} >>\nstream\n${draw}\nendstream`));
+    obj(6, () => put('<< /Title (QCinema 2026 schedule) /Producer (QCinema 2026 Planner) >>'));
+    const xref = len;
+    put(`xref\n0 7\n0000000000 65535 f \n${offs.slice(1).map(o => String(o).padStart(10, '0') + ' 00000 n \n').join('')}trailer\n<< /Size 7 /Root 1 0 R /Info 6 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
+    return new Blob(parts, { type: 'application/pdf' });
+  }
+  async function savePdf(blob, name) {
+    if (typeof offerFile === 'function') return offerFile(blob, name, 'application/pdf');   // GitHub copy
+    const dl = typeof use === 'function' ? await use('downloads') : null;                   // Claude artifact
+    if (!dl) return 'failed';
+    try { const r = await dl.save({ filename: name, data: blob }); if (r && r.status === 'saved') toast('PDF saved'); return 'saved'; }
+    catch (e) { const c = e && e.code; if (c === 'declined') return 'cancelled'; if (c === 'rate_limited') { toast('A save prompt is already open.'); return 'cancelled'; } return 'failed'; }
+  }
+  let sheetTimer = null, sheetGen = 0, sheetUrl = null;
+  function scheduleSheet() {
+    const el = $('#pdfFilter');
+    if (filter === 'all') el.hidden = true;
+    else {
+      el.replaceChildren(h('span', { text: `Showing only ${filterName()}, like the filter at the top.` }),
+        h('button', { type: 'button', class: 'lnk', onclick: () => document.querySelector('#filters [data-f="all"]').click() }, 'Show everything'));
+      el.hidden = false;
+    }
+    clearTimeout(sheetTimer); sheetTimer = setTimeout(buildSheetPreview, 800);
+  }
+  async function buildSheetPreview() {
+    const my = ++sheetGen, img = $('#pdfImg'), ph = $('#pdfPh'), cap = $('#pdfCap'), btn = $('#pdfSave');
+    ph.classList.toggle('letter', paper === 'letter');
+    const data = sheetData();
+    if (!data.list.length) {
+      img.hidden = true; ph.hidden = false; cap.textContent = ''; btn.disabled = true;
+      ph.textContent = !loadedFilms ? 'Building your sheet…' : filter !== 'all' ? 'Nothing in your schedule matches this filter.' : 'Add a few films and your sheet appears here.';
+      return;
+    }
+    const { cv } = await renderSheet(1.6);
+    if (my !== sheetGen) return;
+    const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+    if (my !== sheetGen || !blob) return;
+    if (sheetUrl) URL.revokeObjectURL(sheetUrl);
+    sheetUrl = URL.createObjectURL(blob); img.src = sheetUrl; img.hidden = false; ph.hidden = true;
+    cap.textContent = `${PAPER[paper].label} · 1 page · ${data.list.length} ${data.list.length === 1 ? 'entry' : 'entries'}`;
+    btn.disabled = false;
+  }
+  const paperEl = document.querySelector(`input[name="paper"][value="${paper}"]`); if (paperEl) paperEl.checked = true;
+  document.querySelectorAll('input[name="paper"]').forEach(r => r.addEventListener('change', () => {
+    paper = r.value === 'letter' ? 'letter' : 'a4';
+    try { localStorage.setItem('qc-pdf-paper', paper); } catch (_) {}
+    scheduleSheet();
+  }));
+  $('#pdfSave').onclick = async () => {
+    const hint = $('#pdfHint'), btn = $('#pdfSave'); hint.textContent = ''; btn.disabled = true; btn.textContent = 'Making PDF…';
+    try {
+      const { cv } = await renderSheet(300 / 72);
+      const jpg = await new Promise(res => cv.toBlob(res, 'image/jpeg', 0.92));
+      if (!jpg) throw new Error('encode');
+      const pdf = jpegPdf(new Uint8Array(await jpg.arrayBuffer()), cv.width, cv.height, PAPER[paper]);
+      const r = await savePdf(pdf, 'qcinema-2026-schedule-sheet.pdf');
+      if (r === 'failed') hint.textContent = "Couldn't save the PDF here. Try again, or use a different browser.";
+    } catch (_) { hint.textContent = "Couldn't make the PDF. Try again."; }
+    finally { btn.disabled = false; btn.textContent = 'Download PDF'; }
   };
   const shMaybeEl = $('#shMaybe'), shHandleEl = $('#shHandle');
   shMaybeEl.checked = shMaybe; shHandleEl.disabled = true;

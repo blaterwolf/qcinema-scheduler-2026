@@ -2,7 +2,7 @@
 
 **Open the planner:** [blaterwolf.github.io/qcinema-scheduler-2026](https://blaterwolf.github.io/qcinema-scheduler-2026/). It works in any browser on your phone or computer, with nothing to install or sign in to.
 
-A schedule planner for the QCinema International Film Festival 2026 (Nov 13–22, Quezon City). Pick screenings from the full festival schedule, add your own films and talks, add posters, and save your plan as one image for X or an iPhone wallpaper.
+A schedule planner for the QCinema International Film Festival 2026 (Nov 13–22, Quezon City). Pick screenings from the full festival schedule, add your own films and talks, add posters, save your plan as one image for X or an iPhone wallpaper, and download a one-page PDF to print with each screening's time, cinema, ticket status and a checklist of tickets to buy.
 
 Everything you add is saved in your own browser only (localStorage for the schedule, IndexedDB for posters). Nothing is sent anywhere, and nothing syncs between devices. Each visitor gets their own empty planner.
 
