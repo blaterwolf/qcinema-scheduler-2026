@@ -278,6 +278,19 @@ h1 .who.other{display:block;font-size:.48em;line-height:1.1;color:var(--sun);tex
 .viewnote button{border:1px solid var(--sun);background:transparent;color:var(--sun);font-weight:700;font-size:12.5px;padding:4px 12px;border-radius:999px;cursor:pointer}
 .tag.with{border-color:rgba(82,182,239,.6);color:var(--duo);font-weight:600;white-space:normal}
 .tag.gone{background:rgba(240,70,110,.16);border-color:var(--rose);color:#ff9bb3;white-space:normal}
+/* Cancelled screenings (festival advisories in schedule.json) */
+.tag.cancel{background:rgba(240,70,110,.2);border-color:var(--rose);color:#ff9bb3;white-space:normal;font-weight:700}
+.card.cancelled .pic{filter:grayscale(1);opacity:.4}
+.card.cancelled .sticker{filter:grayscale(1);opacity:.45}
+.card.cancelled h3{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--rose);text-decoration-thickness:2px}
+.card.cancelled .sec,.card.cancelled .when,.card.cancelled .where{opacity:.5}
+.crow.cancelled .ct,.crow.cancelled .cs,.crow.cancelled .cn,.crow.cancelled .cv,.crow.cancelled .tags,.crow.cancelled .cmore,.crow.cancelled .clog,.crow.cancelled .cfr{opacity:.45}
+.crow.cancelled .cthumb{filter:grayscale(1);opacity:.4}
+.crow.cancelled .cn{text-decoration:line-through;text-decoration-color:var(--rose)}
+.ccancel{display:block;color:#ff9bb3;font-size:12.5px;font-weight:600;line-height:1.4}
+.ccancel a,.dlg-cancel a{color:#ff9bb3}
+.cadd.cx,.cadd.cx:disabled{background:transparent;border:1px solid rgba(240,70,110,.6);color:#ff9bb3;cursor:default;opacity:1}
+.dlg-cancel{color:#ff9bb3;font-weight:600}
 .mine{position:relative;z-index:3;justify-self:start;margin-top:4px;border:1px solid var(--cyan);background:transparent;color:var(--cyan);font-weight:700;font-size:12px;padding:4px 11px;border-radius:999px;cursor:pointer}
 .mine:hover{background:var(--cyan);color:var(--on-light)}
 .mine.on{border-color:var(--line);color:var(--muted);cursor:default}
@@ -649,7 +662,8 @@ legend{padding:0;margin-bottom:6px}
   const posters = new Map();  // filmId -> shared poster image
   const names = new Map();    // uid -> profile name
   let withAll = new Map();    // sid -> [uid] who picked that screening
-  const CAT = { ready: false, ev: new Map(), films: new Map(), byFilm: new Map(), byDay: new Map(), fetchedAt: '' };
+  const CAT = { ready: false, ev: new Map(), films: new Map(), byFilm: new Map(), byDay: new Map(), cancel: new Map(), fetchedAt: '' };
+  const cancelOf = sid => CAT.cancel.get(sid) || null;   // { note, source, label } when that screening won't push through
   const cardCache = new Map();
   const rows = {};
 
@@ -765,6 +779,10 @@ legend{padding:0;margin-bottom:6px}
       const byTime = (a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start);
       for (const l of CAT.byFilm.values()) l.sort(byTime);
       for (const l of CAT.byDay.values()) l.sort(byTime);
+      // festival advisories: whole films or single screenings that won't push through
+      const cx = j.cancelled || {};
+      for (const [fid, info] of Object.entries(cx.films || {})) for (const ev of CAT.byFilm.get(fid) || []) CAT.cancel.set(ev.sid, info || {});
+      for (const [sid, info] of Object.entries(cx.screenings || {})) if (CAT.ev.has(sid)) CAT.cancel.set(sid, info || {});
       CAT.fetchedAt = j.fetchedAt || ''; CAT.ready = true;
       const d = new Date(CAT.fetchedAt);
       $('#catAsOf').textContent = isNaN(d) ? '' : `Festival schedule as of ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.`;
@@ -783,7 +801,7 @@ legend{padding:0;margin-bottom:6px}
       const base = { id, sid: it.sid, catalog: true, kind: 'film', plan: it.plan || 'going', ticket: it.ticket || '', notes: it.notes || '', orGroup: it.orGroup || '', order: it.order ?? 0, ownImage: !!(it.image && it.image.id) };
       if (!ev) return Object.assign(base, { title: sn.title || 'Screening', year: sn.year || '', day: sn.day || '', time: sn.time || '', end: sn.end || '', venue: sn.venue || '', section: sn.section || '', gone: CAT.ready, image: it.image || null });
       const fm = CAT.films.get(ev.filmId) || {};
-      return Object.assign(base, { filmId: ev.filmId, title: fm.title || '', year: fm.year || '', day: ev.date, time: ev.start, end: ev.end, venue: ev.venue, section: fm.program || '', director: fm.director || '', guests: ev.guests, extras: evExtras(ev, fm), logline: fm.logline || '', image: it.image || posters.get(ev.filmId) || null });
+      return Object.assign(base, { filmId: ev.filmId, cancelled: cancelOf(ev.sid), title: fm.title || '', year: fm.year || '', day: ev.date, time: ev.start, end: ev.end, venue: ev.venue, section: fm.program || '', director: fm.director || '', guests: ev.guests, extras: evExtras(ev, fm), logline: fm.logline || '', image: it.image || posters.get(ev.filmId) || null });
     }
     return Object.assign({ id, catalog: false }, it, { image: it.image || null, ownImage: !!(it.image && it.image.id) });
   }
@@ -856,7 +874,7 @@ legend{padding:0;margin-bottom:6px}
   async function ensureMyDoc() { if (!me || people.has(me)) return; try { await db.doc(`plans/${me}`).set({ handle: '', joined: Date.now() }); } catch (_) {} }
   async function addFromCatalog(sid) {
     if (!db || !me || !writable) return;
-    const ev = CAT.ev.get(sid); if (!ev || planOf(me).items.has(sid)) return;
+    const ev = CAT.ev.get(sid); if (!ev || cancelOf(sid) || planOf(me).items.has(sid)) return;
     try {
       await itemsCol().doc(sid).set({ sid, plan: 'going', ticket: '', notes: '', orGroup: '', order: Date.now(), snap: snapOf(sid) });
       await ensureMyDoc();
@@ -892,17 +910,23 @@ legend{padding:0;margin-bottom:6px}
     for (const e of evs) { if (q && e.date !== lastDay) { out.push(h('p', { class: 'cgroup', text: shortDay(e.date) })); lastDay = e.date; } out.push(catRow(e, mySids, myRes)); }
     list.replaceChildren(...out);
   }
+  // "Cancelled: <reason> QCinema advisory" line, linking to the festival's post when there is one
+  function advisoryNote(cx, cls) {
+    return h('span', { class: cls }, `Cancelled: ${cx.note || 'this screening won’t push through.'} `,
+      cx.source ? h('a', { href: cx.source, target: '_blank', rel: 'noopener' }, cx.label || 'See the advisory') : null);
+  }
   function catRow(e, mySids, myRes) {
-    const fm = CAT.films.get(e.filmId) || {}, inPlan = mySids.has(e.sid);
-    const row = h('div', { class: `crow hue-${HUES[fm.program] || 'cyan'}` + (inPlan ? ' in' : '') });
+    const fm = CAT.films.get(e.filmId) || {}, inPlan = mySids.has(e.sid), cx = cancelOf(e.sid);
+    const row = h('div', { class: `crow hue-${HUES[fm.program] || 'cyan'}` + (inPlan ? ' in' : '') + (cx ? ' cancelled' : '') });
     const s0 = toMin(e.start), e0 = toMin(e.end);
-    const clashes = myRes.filter(f => f.sid !== e.sid && f.day === e.date && f.plan !== 'maybe' && toMin(f.time) != null && toMin(f.end) != null && toMin(f.time) < e0 && s0 < toMin(f.end)).map(f => f.title.length > 32 ? f.title.slice(0, 30).trimEnd() + '…' : f.title);
+    const clashes = cx ? [] : myRes.filter(f => !f.cancelled && f.sid !== e.sid && f.day === e.date && f.plan !== 'maybe' && toMin(f.time) != null && toMin(f.end) != null && toMin(f.time) < e0 && s0 < toMin(f.end)).map(f => f.title.length > 32 ? f.title.slice(0, 30).trimEnd() + '…' : f.title);
     const friends = (withAll.get(e.sid) || []).filter(u => u !== me).map(handleOf);
     const meta = h('div', { class: 'cm' },
       h('span', { class: 'cs', text: fm.program || '' }),
       h('span', { class: 'cn' }, fm.title || '', fm.year ? h('span', { class: 'yr', text: ` (${fm.year})` }) : null),
       h('span', { class: 'cv', text: [e.venue, fm.mins ? `${fm.mins} min` : '', fm.director && fm.director !== 'To be announced' ? `dir. ${fm.director}` : ''].filter(Boolean).join(' · ') }));
     const ex = evExtras(e, fm); if (ex.length) meta.append(h('div', { class: 'tags' }, ...ex.map(x => h('span', { class: 'tag xtra', title: x === 'Q&A' && e.guests ? `Q&A with ${e.guests}` : null, text: x }))));
+    if (cx) meta.append(advisoryNote(cx, 'ccancel'));
     if (clashes.length) meta.append(h('span', { class: 'cwarn', text: `Overlaps ${clashes.join(', ')} in your schedule` }));
     if (friends.length) meta.append(h('span', { class: 'cfr', text: `Also going: ${friends.join(', ')}` }));
     if (fm.logline) {
@@ -916,7 +940,8 @@ legend{padding:0;margin-bottom:6px}
       if (inPlan) row.append(viewing === me
         ? h('button', { type: 'button', class: 'cadd on', title: 'Edit this entry', onclick: () => { const it = planOf(me).items.get(e.sid); catD.close(); if (it) openDialog(resolveItem(e.sid, it)); } }, '✓ Added')
         : h('button', { type: 'button', class: 'cadd on', disabled: true }, '✓ In yours'));
-      else row.append(h('button', { type: 'button', class: 'cadd', onclick: ev => { ev.currentTarget.disabled = true; addFromCatalog(e.sid); } }, '+ Add'));
+      else row.append(cx ? h('button', { type: 'button', class: 'cadd cx', disabled: true, title: 'This screening won’t push through' }, 'Cancelled')
+        : h('button', { type: 'button', class: 'cadd', onclick: ev => { ev.currentTarget.disabled = true; addFromCatalog(e.sid); } }, '+ Add'));
     }
     return row;
   }
@@ -969,7 +994,7 @@ legend{padding:0;margin-bottom:6px}
   function buildCard(f, clashes, dups, withs) {
     const plan = f.plan === 'maybe' ? 'maybe' : 'going';
     const hue = hueFor(f);
-    const card = h('article', { class: `card ${plan} hue-${hue}${f.kind === 'outside' ? ' outside' : ''}` });
+    const card = h('article', { class: `card ${plan} hue-${hue}${f.kind === 'outside' ? ' outside' : ''}${f.cancelled ? ' cancelled' : ''}` });
     const pic = h('div', { class: 'pic' });
     const label = (f.title || 'Untitled') + (f.kind !== 'talk' && f.year ? ` (${f.year})` : '');
     if (f.image && f.image.id) {
@@ -1002,6 +1027,7 @@ legend{padding:0;margin-bottom:6px}
     if (clashes && clashes.length) tags.append(h('span', { class: 'tag clash', text: `Clashes with ${clashes.join(', ')}` }));
     if (dups && dups.length) tags.append(h('span', { class: 'tag dup', text: `Also on ${dups.join(', ')}` }));
     if (f.gone) tags.append(h('span', { class: 'tag gone', text: 'No longer in the festival schedule' }));
+    if (f.cancelled) tags.prepend(h('span', { class: 'tag cancel', title: f.cancelled.note || '', text: 'Unavailable · screening cancelled' }));
     if (withs && withs.length) tags.append(h('span', { class: 'tag with', text: `With ${withs.join(', ')}` }));
     meta.append(tags);
     if (f.notes) meta.append(h('p', { class: 'note', text: f.notes }));
@@ -1026,7 +1052,7 @@ legend{padding:0;margin-bottom:6px}
   // Two entries on the same day sharing an orGroup are shown as one "undecided" split.
   function pairsByDay(list) {
     const groups = new Map(), pairOf = new Map();
-    for (const f of list) if (f.orGroup) (groups.get(f.orGroup) || groups.set(f.orGroup, []).get(f.orGroup)).push(f);
+    for (const f of list) if (f.orGroup && !f.cancelled) (groups.get(f.orGroup) || groups.set(f.orGroup, []).get(f.orGroup)).push(f);
     for (const g of groups.values()) if (g.length >= 2) { const pr = [g[0], g[1]]; pairOf.set(pr[0].id, pr); pairOf.set(pr[1].id, pr); }
     return pairOf;
   }
@@ -1209,7 +1235,7 @@ legend{padding:0;margin-bottom:6px}
     // clashes between "going" entries on the same day
     const clash = new Map();
     for (const list of Object.values(byDay)) {
-      const timed = list.filter(f => f.plan !== 'maybe' && toMin(f.time) != null && toMin(f.end) != null);
+      const timed = list.filter(f => f.plan !== 'maybe' && !f.cancelled && toMin(f.time) != null && toMin(f.end) != null);
       for (let i = 0; i < timed.length; i++) for (let j = i + 1; j < timed.length; j++) {
         const a = timed[i], b = timed[j];
         if (toMin(a.time) < toMin(b.end) && toMin(b.time) < toMin(a.end)) {
@@ -1225,7 +1251,7 @@ legend{padding:0;margin-bottom:6px}
 
     // counts
     const c = { all: films.length, going: 0, maybe: 0, badge: 0, tobuy: 0, bought: 0, outside: 0 };
-    for (const f of films) { f.plan === 'maybe' ? c.maybe++ : c.going++; if (c[f.ticket] != null && f.ticket) c[f.ticket]++; if (f.kind === 'outside') c.outside++; }
+    for (const f of films) { f.plan === 'maybe' ? c.maybe++ : c.going++; if (c[f.ticket] != null && f.ticket && !(f.cancelled && f.ticket === 'badge')) c[f.ticket]++; if (f.kind === 'outside') c.outside++; }
     document.querySelectorAll('[data-c]').forEach(b => b.textContent = b.dataset.c === 'badge' ? `${c.badge}/${BADGE_MAX}` : c[b.dataset.c]);
 
     const today = new Date(); const todayId = today.getFullYear() === 2026 && today.getMonth() === 10 ? `2026-11-${today.getDate()}` : '';
@@ -1242,8 +1268,8 @@ legend{padding:0;margin-bottom:6px}
 
       // summary: count + span of the day + venues
       if (list.length) {
-        const n = list.length, timed = list.filter(f => f.time);
-        let txt = `${n} ${n === 1 ? 'entry' : 'entries'}`;
+        const live = list.filter(f => !f.cancelled), n = live.length, timed = live.filter(f => f.time);
+        let txt = n ? `${n} ${n === 1 ? 'entry' : 'entries'}` : 'Only cancelled screenings';
         if (timed.length) {
           const first = timed[0].time, last = timed.reduce((m, f) => (toMin(f.end || f.time) > toMin(m) ? (f.end || f.time) : m), timed[0].end || timed[0].time);
           txt += `\n${fmt12(first)} – ${fmt12(last)}`;
@@ -1295,7 +1321,7 @@ legend{padding:0;margin-bottom:6px}
     if (statusOverride) { el.replaceChildren(h('span', { class: statusOverride.warn ? 'warn' : null, text: statusOverride.text })); return; }
     if (!loadedFilms && !films.length) { el.replaceChildren(h('span', { text: viewing && viewing !== me ? 'Loading this schedule…' : 'Loading your schedule…' })); return; }
     el.replaceChildren(
-      h('span', null, '🎫 ', h('strong', { text: String(films.filter(f => f.ticket === 'badge').length) }), ` of ${BADGE_MAX} badge passes used`));
+      h('span', null, '🎫 ', h('strong', { text: String(films.filter(f => f.ticket === 'badge' && !f.cancelled).length) }), ` of ${BADGE_MAX} badge passes used`));
   }
 
   /* ---------- writes ---------- */
@@ -1361,7 +1387,7 @@ legend{padding:0;margin-bottom:6px}
     if (isCat) {
       const opts = f.filmId ? CAT.byFilm.get(f.filmId) || [] : [];
       if (!opts.some(e => e.sid === f.sid)) sidSel.append(h('option', { value: f.sid, text: `${shortDay(f.day)} · ${fmt12(f.time)} · ${f.venue} (no longer listed)` }));
-      for (const e of opts) { const taken = e.sid !== f.sid && planOf(me).items.has(e.sid); sidSel.append(h('option', { value: e.sid, disabled: taken, text: `${shortDay(e.date)} · ${fmt12(e.start)} · ${e.venue}${taken ? ' (already added)' : ''}` })); }
+      for (const e of opts) { const taken = e.sid !== f.sid && planOf(me).items.has(e.sid), gone = e.sid !== f.sid && !!cancelOf(e.sid); sidSel.append(h('option', { value: e.sid, disabled: taken || gone, text: `${shortDay(e.date)} · ${fmt12(e.start)} · ${e.venue}${taken ? ' (already added)' : cancelOf(e.sid) ? ' (cancelled)' : ''}` })); }
       sidSel.value = f.sid;
     }
     $('#fTitle').value = f ? f.title || '' : '';
@@ -1376,6 +1402,7 @@ legend{padding:0;margin-bottom:6px}
     const info = $('#info'); info.replaceChildren();
     if (f && (f.section || f.director || f.guests)) {
       info.append(h('span', { text: 'From the festival schedule' }));
+      if (f.cancelled) info.append(advisoryNote(f.cancelled, 'dlg-cancel'));
       if (f.section) info.append(h('span', null, 'Section: ', h('b', { text: f.section })));
       if (f.director) info.append(h('span', null, f.kind === 'talk' ? 'Speakers: ' : 'Director: ', h('b', { text: f.director })));
       if (f.guests) info.append(h('span', null, 'Q&A: ', h('b', { text: f.guests })));
@@ -1444,7 +1471,7 @@ legend{padding:0;margin-bottom:6px}
   daySel.addEventListener('change', fillOrOptions);
   $('#fSid').addEventListener('change', fillOrOptions);
   $('#fOr').addEventListener('change', () => { if ($('#fOr').value) setRadio('plan', 'maybe'); });
-  const badgeUsed = () => films.filter(x => x.ticket === 'badge' && (!editing || x.id !== editing.id)).length;
+  const badgeUsed = () => films.filter(x => x.ticket === 'badge' && !x.cancelled && (!editing || x.id !== editing.id)).length;
   function syncTicketOpts() {
     const used = badgeUsed(), outside = getRadio('kind') === 'outside';
     if (outside && getRadio('ticket') === 'badge') setRadio('ticket', '');
@@ -1794,7 +1821,7 @@ legend{padding:0;margin-bottom:6px}
     const my = ++shareGen;
     const list = DAYS.map(day => {
       const s = dayStatus[day.id] || '';
-      const all = s === 'skip' ? [] : films.filter(f => f.day === day.id).sort(cmpFilm);
+      const all = s === 'skip' ? [] : films.filter(f => f.day === day.id && !f.cancelled).sort(cmpFilm);
       const pairOf = pairsByDay(all);
       const pool = all.filter(f => shMaybe || filter === 'maybe' || f.plan !== 'maybe' || pairOf.has(f.id));
       const slots = slotsFor(pool, filter === 'all' ? null : matches);   // same rule as the page: a split card stays if either side matches
@@ -1954,7 +1981,7 @@ legend{padding:0;margin-bottom:6px}
   function sheetData() {
     const pick = f => filter === 'all' || matches(f);
     const days = DAYS.map(day => {
-      const all = films.filter(f => f.day === day.id).sort(cmpFilm), pairOf = pairsByDay(all);
+      const all = films.filter(f => f.day === day.id && !f.cancelled).sort(cmpFilm), pairOf = pairsByDay(all);
       return { day, items: all.filter(pick).map(f => ({ f, undecided: pairOf.has(f.id) })) };
     }).filter(r => r.items.length);
     const list = days.flatMap(r => r.items.map(x => x.f));
