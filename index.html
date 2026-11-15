@@ -157,6 +157,36 @@ h1 span{color:var(--rose)}
 .tag.badge{background:var(--indigo);color:var(--ink)}
 .tag.tobuy{background:var(--sun);color:var(--on-light)}
 button.tag.tobuy{position:relative;z-index:3;cursor:pointer;border:0;font-family:inherit}
+/* Watched + rating (Letterboxd green stars, orange heart) */
+.tag.watched{background:rgba(0,224,84,.12);border-color:rgba(0,224,84,.55);color:#8dffbe;gap:6px}
+.tag.watched .rs{color:#00e054;letter-spacing:1px}
+.tag.watched .rh,.rate-val .rh{color:#ff8000}
+button.tag.watched,button.tag.rate{position:relative;z-index:3;cursor:pointer;font-family:inherit}
+.tag.rate{background:transparent;border-color:#00e054;color:#8dffbe}
+.tag.rate:hover,button.tag.watched:hover{background:rgba(0,224,84,.22)}
+.card.watched{border-color:rgba(0,224,84,.65)}
+.card.watched .pic:not(.blank)::after{content:"";position:absolute;inset:0;z-index:2;background:rgba(0,224,84,.16);mix-blend-mode:normal;pointer-events:none}
+.card.watched .pic.blank{box-shadow:inset 0 0 0 999px rgba(0,224,84,.14)}
+.card.watched .meta{background:linear-gradient(180deg,rgba(0,224,84,.08),rgba(0,224,84,0) 70%);border-radius:0 0 var(--r) var(--r)}
+.rlike{display:grid;justify-items:center;gap:4px}
+.rlike span{font-size:11.5px;font-weight:700;color:var(--faint)}
+.rheart[aria-pressed="true"]+span{color:#ff8000}
+.rate-note{margin:-4px 0 0;padding:8px 12px;border-radius:10px;background:rgba(0,224,84,.08);border:1px solid rgba(0,224,84,.3);color:#8dffbe;font-size:13px;text-align:center}
+dialog#rateDlg{width:min(440px,calc(100vw - 24px))}
+.rate-sub{margin:-6px 0 0;color:var(--muted);font-size:13.5px}
+.rate-row{display:flex;align-items:center;justify-content:center;gap:16px;padding:6px 0}
+.rstars{display:flex;gap:2px;border-radius:10px;touch-action:manipulation;cursor:pointer;outline-offset:6px}
+.rstar{position:relative;width:46px;height:46px}
+.rstar svg{position:absolute;inset:0;width:100%;height:100%}
+.rstar .off path{fill:rgba(238,241,255,.16)}
+.rstar .on path{fill:#00e054}
+.rstar .on{clip-path:inset(0 calc(100% - var(--f,0%)) 0 0)}
+.rheart{flex:none;width:50px;height:50px;border-radius:50%;border:1px solid var(--line);background:transparent;display:grid;place-items:center;cursor:pointer;color:var(--faint)}
+.rheart svg{width:26px;height:26px}
+.rheart[aria-pressed="true"]{color:#ff8000;border-color:#ff8000;background:rgba(255,128,0,.12)}
+.rate-val{margin:0;text-align:center;color:var(--muted);font-size:13.5px;min-height:1.4em}
+.rate-val b{color:#00e054;letter-spacing:1px}
+@media (max-width:420px){.rstar{width:40px;height:40px}.rheart{width:44px;height:44px}}
 button.tag.tobuy:hover::after{content:" · mark bought";font-weight:600}
 .tag.bought{background:var(--cyan);color:var(--on-light)}
 .tag.maybe{border-color:var(--duo);color:var(--duo)}
@@ -462,6 +492,7 @@ legend{padding:0;margin-bottom:6px}
       <button type="button" class="chip" data-f="all" aria-pressed="true">All <b data-c="all">0</b></button>
       <button type="button" class="chip" data-f="going" aria-pressed="false">★ Going <b data-c="going">0</b></button>
       <button type="button" class="chip" data-f="maybe" aria-pressed="false">☆ Maybe <b data-c="maybe">0</b></button>
+      <button type="button" class="chip" data-f="watched" aria-pressed="false">👁 Watched <b data-c="watched">0</b></button>
       <button type="button" class="chip" data-f="badge" aria-pressed="false">🎫 Badge <b data-c="badge">0</b></button>
       <button type="button" class="chip" data-f="tobuy" aria-pressed="false">💵 To buy <b data-c="tobuy">0</b></button>
       <button type="button" class="chip" data-f="bought" aria-pressed="false">✓ Bought <b data-c="bought">0</b></button>
@@ -638,6 +669,26 @@ legend{padding:0;margin-bottom:6px}
   </div>
 </dialog>
 
+<dialog id="rateDlg" aria-labelledby="rateTitle">
+  <form class="dlg" id="rateForm" novalidate>
+    <div class="dlg-h"><h2 id="rateTitle">Rate</h2><button type="button" class="x" id="rateClose" aria-label="Close">×</button></div>
+    <p class="rate-sub" id="rateSub"></p>
+    <div class="rate-row">
+      <div class="rstars" id="rStars" role="slider" tabindex="0" aria-label="Your rating" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0"></div>
+      <div class="rlike"><button type="button" class="rheart" id="rHeart" aria-pressed="false" aria-label="Like"></button><span id="rLikeL" aria-hidden="true">Like</span></div>
+    </div>
+    <p class="rate-val" id="rVal"></p>
+    <p class="rate-note" id="rateNote" hidden>Shorts program: give one general rating for the whole program instead of rating each short.</p>
+    <div class="dlg-f">
+      <button type="button" class="btn danger" id="rUnwatch" hidden>Not watched</button>
+      <span class="sp"></span>
+      <button type="button" class="btn" id="rCancel">Cancel</button>
+      <button type="submit" class="btn primary" id="rSave">Save as watched</button>
+      <p class="err" id="rErr" role="alert"></p>
+    </div>
+  </form>
+</dialog>
+
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>
@@ -798,7 +849,7 @@ legend{padding:0;margin-bottom:6px}
   function resolveItem(id, it) {
     if (it.sid) {
       const ev = CAT.ev.get(it.sid), sn = it.snap || {};
-      const base = { id, sid: it.sid, catalog: true, kind: 'film', plan: it.plan || 'going', ticket: it.ticket || '', notes: it.notes || '', orGroup: it.orGroup || '', order: it.order ?? 0, ownImage: !!(it.image && it.image.id) };
+      const base = { id, sid: it.sid, catalog: true, kind: 'film', watched: !!it.watched, rating: +it.rating || 0, liked: !!it.liked, plan: it.plan || 'going', ticket: it.ticket || '', notes: it.notes || '', orGroup: it.orGroup || '', order: it.order ?? 0, ownImage: !!(it.image && it.image.id) };
       if (!ev) return Object.assign(base, { title: sn.title || 'Screening', year: sn.year || '', day: sn.day || '', time: sn.time || '', end: sn.end || '', venue: sn.venue || '', section: sn.section || '', gone: CAT.ready, image: it.image || null });
       const fm = CAT.films.get(ev.filmId) || {};
       return Object.assign(base, { filmId: ev.filmId, cancelled: cancelOf(ev.sid), title: fm.title || '', year: fm.year || '', day: ev.date, time: ev.start, end: ev.end, venue: ev.venue, section: fm.program || '', director: fm.director || '', guests: ev.guests, extras: evExtras(ev, fm), logline: fm.logline || '', image: it.image || posters.get(ev.filmId) || null });
@@ -834,7 +885,7 @@ legend{padding:0;margin-bottom:6px}
   function doRefresh() {
     computeOverlap();
     const p = viewing ? planOf(viewing) : null;
-    films = p ? [...p.items].map(([id, it]) => resolveItem(id, it)) : [];
+    films = p ? [...p.items].map(([id, it]) => { const f = resolveItem(id, it); f.ended = !f.cancelled && hasEnded(f); return f; }) : [];
     dayStatus = p ? p.days : {};
     canWrite = !!(db && me && viewing === me && writable);
     const ab = $('#addBtn'); ab.hidden = false;
@@ -985,6 +1036,7 @@ legend{padding:0;margin-bottom:6px}
     switch (filter) {
       case 'going': return f.plan !== 'maybe';
       case 'maybe': return f.plan === 'maybe';
+      case 'watched': return !!f.watched;
       case 'outside': return f.kind === 'outside';
       case 'badge': case 'tobuy': case 'bought': return f.ticket === filter;
       default: return true;
@@ -994,7 +1046,7 @@ legend{padding:0;margin-bottom:6px}
   function buildCard(f, clashes, dups, withs) {
     const plan = f.plan === 'maybe' ? 'maybe' : 'going';
     const hue = hueFor(f);
-    const card = h('article', { class: `card ${plan} hue-${hue}${f.kind === 'outside' ? ' outside' : ''}${f.cancelled ? ' cancelled' : ''}` });
+    const card = h('article', { class: `card ${plan} hue-${hue}${f.kind === 'outside' ? ' outside' : ''}${f.cancelled ? ' cancelled' : ''}${f.watched ? ' watched' : ''}` });
     const pic = h('div', { class: 'pic' });
     const label = (f.title || 'Untitled') + (f.kind !== 'talk' && f.year ? ` (${f.year})` : '');
     if (f.image && f.image.id) {
@@ -1008,7 +1060,8 @@ legend{padding:0;margin-bottom:6px}
     const tl = (f.title || 'Untitled').length;
     pic.append(h('span', { class: 'ph' + (tl > 34 ? ' xlong' : tl > 18 ? ' long' : ''), 'aria-hidden': 'true', text: f.title || 'Untitled' }));
     if (canWrite && assets) pic.append(h('span', { class: 'ph-hint', 'aria-hidden': 'true', text: 'Drop a poster' }));
-    if (plan === 'going') { const s = h('span', { class: 'sticker', title: 'Going' }); s.innerHTML = STAR_FULL; card.append(s); }
+    if (f.watched) { const s = h('span', { class: 'sticker', title: 'Watched' }); s.innerHTML = EYE_STK; card.append(s); }
+    else if (plan === 'going') { const s = h('span', { class: 'sticker', title: 'Going' }); s.innerHTML = STAR_FULL; card.append(s); }
 
     const meta = h('div', { class: 'meta' });
     const secLabel = f.kind === 'outside' ? 'Outside QCinema' : f.kind === 'talk' ? (f.section || 'Talk') : f.section;
@@ -1028,6 +1081,8 @@ legend{padding:0;margin-bottom:6px}
     if (dups && dups.length) tags.append(h('span', { class: 'tag dup', text: `Also on ${dups.join(', ')}` }));
     if (f.gone) tags.append(h('span', { class: 'tag gone', text: 'No longer in the festival schedule' }));
     if (f.cancelled) tags.prepend(h('span', { class: 'tag cancel', title: f.cancelled.note || '', text: 'Unavailable · screening cancelled' }));
+    if (f.watched) tags.prepend(ratingTag(f, canWrite));
+    else if (f.ended && canWrite) tags.prepend(h('button', { type: 'button', class: 'tag rate', title: 'Rate it and mark it watched', onclick: e => { e.stopPropagation(); openRate(f); } }, '★ Rate'));
     if (withs && withs.length) tags.append(h('span', { class: 'tag with', text: `With ${withs.join(', ')}` }));
     meta.append(tags);
     if (f.notes) meta.append(h('p', { class: 'note', text: f.notes }));
@@ -1250,8 +1305,8 @@ legend{padding:0;margin-bottom:6px}
     const dupFor = f => { const g = byTitle.get(norm(f.title)) || []; return g.filter(x => x.id !== f.id && x.day !== f.day).map(x => shortDay(x.day).replace(/^\w+, /, '')); };
 
     // counts
-    const c = { all: films.length, going: 0, maybe: 0, badge: 0, tobuy: 0, bought: 0, outside: 0 };
-    for (const f of films) { f.plan === 'maybe' ? c.maybe++ : c.going++; if (c[f.ticket] != null && f.ticket && !(f.cancelled && f.ticket === 'badge')) c[f.ticket]++; if (f.kind === 'outside') c.outside++; }
+    const c = { all: films.length, going: 0, maybe: 0, watched: 0, badge: 0, tobuy: 0, bought: 0, outside: 0 };
+    for (const f of films) { f.plan === 'maybe' ? c.maybe++ : c.going++; if (c[f.ticket] != null && f.ticket && !(f.cancelled && f.ticket === 'badge')) c[f.ticket]++; if (f.kind === 'outside') c.outside++; if (f.watched) c.watched++; }
     document.querySelectorAll('[data-c]').forEach(b => b.textContent = b.dataset.c === 'badge' ? `${c.badge}/${BADGE_MAX}` : c[b.dataset.c]);
 
     const today = new Date(); const todayId = today.getFullYear() === 2026 && today.getMonth() === 10 ? `2026-11-${today.getDate()}` : '';
@@ -1559,7 +1614,8 @@ legend{padding:0;margin-bottom:6px}
   const HUEC = { cyan: [C.cyan, C.onLight], sun: [C.sun, C.onLight], rose: [C.rose, '#ffffff'], blue: [C.blue, C.onLight], indigo: ['#4257c4', '#ffffff'], paper: [C.ink, C.onLight] };
   const FA = '"Archivo", "Arial Narrow", sans-serif', FB = '"Figtree", system-ui, sans-serif', FM = '"IBM Plex Mono", ui-monospace, monospace';
   const FE = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
-  const TICKET_STK = { badge: { bg: '#4257c4', emoji: '🎫' }, tobuy: { bg: C.sun, emoji: '💵' }, bought: { bg: C.cyan, emoji: '' } };
+  const TICKET_STK = { badge: { bg: '#4257c4', emoji: '🎫' }, tobuy: { bg: C.sun, emoji: '💵' }, bought: { bg: C.cyan, emoji: '' }, watched: { bg: '#00c030', eye: true } };
+  const stkOf = f => f.watched ? 'watched' : f.ticket;
   const cmpFilm = (a, b) => ((a.time ? 0 : 1) - (b.time ? 0 : 1)) || ((toMin(a.time) ?? 0) - (toMin(b.time) ?? 0)) || ((a.order ?? 0) - (b.order ?? 0));
   let shareTimer = null, shareGen = 0, shareBlob = null, shareUrl = null, shareKey = '';
   let shMaybe = false, shHandle = '';
@@ -1613,7 +1669,10 @@ legend{padding:0;margin-bottom:6px}
     ctx.shadowColor = 'rgba(7,20,51,.6)'; ctx.shadowOffsetY = 2 * shS;
     ctx.beginPath(); ctx.arc(0, 0, 17, 0, Math.PI * 2); ctx.fillStyle = t.bg; ctx.fill();
     ctx.shadowColor = 'transparent'; ctx.lineWidth = 2; ctx.strokeStyle = C.onLight; ctx.stroke();
-    if (t.emoji) {
+    if (t.eye) {
+      ctx.beginPath(); ctx.ellipse(0, 0, 9.5, 6, 0, 0, Math.PI * 2); ctx.lineWidth = 2.4; ctx.strokeStyle = C.onLight; ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, 0, 2.8, 0, Math.PI * 2); ctx.fillStyle = C.onLight; ctx.fill();
+    } else if (t.emoji) {
       ctx.font = `18px ${FE}`; if ('fontStretch' in ctx) ctx.fontStretch = 'normal'; if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = C.onLight; ctx.fillText(t.emoji, 0, 1);
     } else {
@@ -1642,6 +1701,7 @@ legend{padding:0;margin-bottom:6px}
       ctx.fillStyle = C.deep; ctx.fillRect(x, y, w, hh);
       drawPic(ctx, im, x, y, w, hh, f.image || {});
       if (maybe) { ctx.fillStyle = 'rgba(10,16,41,.35)'; ctx.fillRect(x, y, w, hh); }
+      if (f.watched) { ctx.fillStyle = 'rgba(0,224,84,.16)'; ctx.fillRect(x, y, w, hh); }
       const g = ctx.createLinearGradient(0, y + hh * 0.35, 0, y + hh); g.addColorStop(0, 'rgba(10,16,41,0)'); g.addColorStop(1, 'rgba(10,16,41,.95)');
       ctx.fillStyle = g; ctx.fillRect(x, y, w, hh);
       setFont(ctx, 800, 16, FA, 'condensed', 0); const lines = wrapLines(ctx, f.title || '', w - 18, 2);
@@ -1659,11 +1719,12 @@ legend{padding:0;margin-bottom:6px}
       if (lab) { setFont(ctx, 800, 10, FA, 'normal', 1.5); ctx.fillStyle = maybe ? C.duo : 'rgba(7,20,51,.7)'; ctx.fillText(lab, x + 13, base - fit.lines.length * lh - 2); }
     }
     ctx.restore();
-    if (f.time) {
+    if (f.watched) drawRatingChip(ctx, x + 8, y + 8, f, false);
+    else if (f.time) {
       setFont(ctx, 600, 12, FM, 'normal', 0); const t = fmt12(f.time); const cw = ctx.measureText(t).width + 12;
       ctx.fillStyle = 'rgba(10,16,41,.85)'; rr(ctx, x + 8, y + 8, cw, 20, 10); ctx.fill(); ctx.fillStyle = C.ink; ctx.fillText(t, x + 14, y + 22);
     }
-    ctx.save(); if (outside) { ctx.setLineDash([6, 5]); ctx.strokeStyle = 'rgba(238,241,255,.9)'; } else ctx.strokeStyle = 'rgba(20,178,220,.75)';
+    ctx.save(); if (outside) { ctx.setLineDash([6, 5]); ctx.strokeStyle = 'rgba(238,241,255,.9)'; } else ctx.strokeStyle = f.watched ? 'rgba(0,224,84,.9)' : 'rgba(20,178,220,.75)';
     ctx.lineWidth = 2; rr(ctx, x + 1, y + 1, w - 2, hh - 2, 11); ctx.stroke(); ctx.restore();
   }
   function drawHalf(ctx, x, y, w, hh, f, im, top, tri, dim) {
@@ -1692,8 +1753,8 @@ legend{padding:0;margin-bottom:6px}
     ctx.fillStyle = imB ? C.ink : (HUEC[hueFor(b)] || HUEC.cyan)[1]; ctx.textAlign = 'right';
     lb.forEach((l, i) => ctx.fillText(l, x + w - 9, y + hh - 34 - (lb.length - 1 - i) * 14)); ctx.textAlign = 'left';
     ctx.restore();
-    if (a.time) timeChip(ctx, x + 8, y + 8, a.time, false);
-    if (b.time) timeChip(ctx, x + w - 8, y + hh - 28, b.time, true);
+    if (a.watched) drawRatingChip(ctx, x + 8, y + 8, a, false); else if (a.time) timeChip(ctx, x + 8, y + 8, a.time, false);
+    if (b.watched) drawRatingChip(ctx, x + w - 8, y + hh - 28, b, true); else if (b.time) timeChip(ctx, x + w - 8, y + hh - 28, b.time, true);
     ctx.save(); ctx.translate(x + w / 2, y + hh / 2); ctx.rotate(-8 * Math.PI / 180);
     ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI * 2); ctx.fillStyle = C.sun; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = C.onLight; ctx.stroke();
     setFont(ctx, 900, 11, FA, 'normal', 0.5); ctx.fillStyle = C.onLight; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('OR', 0, 1); ctx.restore();
@@ -1770,12 +1831,12 @@ legend{padding:0;margin-bottom:6px}
         if (sl.pair) {
           const [a, b] = sl.pair;
           drawSplitTile(ctx, x, ty, tw, tileH, a, b, imOf(a), imOf(b));
-          if (TICKET_STK[a.ticket]) stickers.push([x + tw - 6, ty + 8, a.ticket]);
-          if (TICKET_STK[b.ticket]) stickers.push([x + 6, ty + tileH - 8, b.ticket]);
+          if (TICKET_STK[stkOf(a)]) stickers.push([x + tw - 6, ty + 8, stkOf(a)]);
+          if (TICKET_STK[stkOf(b)]) stickers.push([x + 6, ty + tileH - 8, stkOf(b)]);
           return;
         }
         drawTile(ctx, x, ty, tw, tileH, sl.f, imOf(sl.f));
-        if (TICKET_STK[sl.f.ticket]) stickers.push([x + tw - 6, ty + 8, sl.f.ticket]);
+        if (TICKET_STK[stkOf(sl.f)]) stickers.push([x + tw - 6, ty + 8, stkOf(sl.f)]);
       });
     });
     stickers.forEach(st => drawTicket(ctx, st[0], st[1], st[2]));
@@ -1792,7 +1853,7 @@ legend{padding:0;margin-bottom:6px}
       ctx.fillStyle = C.rose; rr(ctx, px, y + 32, tw, 18, 9); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.fillText('TBC', px + 6, y + 45);
     }
   }
-  const FILTER_TAG = { maybe: 'MAYBES', badge: 'BADGE SCREENINGS', tobuy: 'TICKETS TO BUY', bought: 'TICKETS BOUGHT', outside: 'OUTSIDE QCINEMA' };
+  const FILTER_TAG = { watched: 'WATCHED', maybe: 'MAYBES', badge: 'BADGE SCREENINGS', tobuy: 'TICKETS TO BUY', bought: 'TICKETS BOUGHT', outside: 'OUTSIDE QCINEMA' };
   const tagged = t => FILTER_TAG[filter] ? `${FILTER_TAG[filter]} · ${t}` : t;
   function renderShareFilter() {
     const el = $('#shFilter'), mb = $('#shMaybe');
@@ -1828,7 +1889,7 @@ legend{padding:0;margin-bottom:6px}
       return { day, s, items: slots.flatMap(sl => sl.pair || [sl.f]), slots };
     }).filter(r => r.s !== 'skip' && (r.items.length || (r.s === 'tbc' && filter === 'all')));
     const hdl = viewHandle();
-    const key = JSON.stringify([shFmt, filter, list.map(r => [r.day.id, r.s, r.items.map(f => [f.title, f.time, f.plan, f.kind, f.section, f.ticket, f.image, f.orGroup])]), hdl, avatarOf(viewing).length, avatarOf(viewing).slice(-48)]);
+    const key = JSON.stringify([shFmt, filter, list.map(r => [r.day.id, r.s, r.items.map(f => [f.title, f.time, f.plan, f.kind, f.section, f.ticket, f.image, f.orGroup, f.watched, f.rating, f.liked])]), hdl, avatarOf(viewing).length, avatarOf(viewing).slice(-48)]);
     const imgEl = $('#shImg'), ph = $('#shPh'), cap = $('#shCap'), save = $('#shSave');
     if (key === shareKey && (shareBlob || !list.length)) return;
     if (!list.length || !list.some(r => r.items.length)) {
@@ -1876,12 +1937,12 @@ legend{padding:0;margin-bottom:6px}
     ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(M, TOP - 18.5); ctx.lineTo(W - M, TOP - 18.5); ctx.stroke();
 
     // one column per day
-    const n = list.length, colW = (W - 2 * M - GAP * (n - 1)) / n;
+    const n = list.length, colW = Math.min(300, (W - 2 * M - GAP * (n - 1)) / n), cx0 = (W - n * colW - GAP * (n - 1)) / 2;
     const maxK = Math.max(4, ...list.map(r => r.slots.length));
     const tilesTop = TOP + COLHEAD, tileH = (H - BOTTOM - tilesTop - GAP * (maxK - 1)) / maxK;
     const stickers = [];
     list.forEach((r, ci) => {
-      const x = M + ci * (colW + GAP);
+      const x = cx0 + ci * (colW + GAP);
       if (r.s === 'tbc') {
         ctx.save(); rr(ctx, x - 6, TOP - 8, colW + 12, H - BOTTOM - TOP + 16, 12); ctx.clip();
         ctx.strokeStyle = 'rgba(240,70,110,.10)'; ctx.lineWidth = 10;
@@ -1904,12 +1965,12 @@ legend{padding:0;margin-bottom:6px}
         if (sl.pair) {
           const [a, b] = sl.pair;
           drawSplitTile(ctx, x, y, colW, tileH, a, b, imOf(a), imOf(b));
-          if (TICKET_STK[a.ticket]) stickers.push([x + colW - 6, y + 8, a.ticket]);
-          if (TICKET_STK[b.ticket]) stickers.push([x + 6, y + tileH - 8, b.ticket]);
+          if (TICKET_STK[stkOf(a)]) stickers.push([x + colW - 6, y + 8, stkOf(a)]);
+          if (TICKET_STK[stkOf(b)]) stickers.push([x + 6, y + tileH - 8, stkOf(b)]);
           return;
         }
         drawTile(ctx, x, y, colW, tileH, sl.f, imOf(sl.f));
-        if (TICKET_STK[sl.f.ticket]) stickers.push([x + colW - 6, y + 8, sl.f.ticket]);
+        if (TICKET_STK[stkOf(sl.f)]) stickers.push([x + colW - 6, y + 8, stkOf(sl.f)]);
       });
     });
     stickers.forEach(s => drawTicket(ctx, s[0], s[1], s[2]));
@@ -1985,7 +2046,7 @@ legend{padding:0;margin-bottom:6px}
       return { day, items: all.filter(pick).map(f => ({ f, undecided: pairOf.has(f.id) })) };
     }).filter(r => r.items.length);
     const list = days.flatMap(r => r.items.map(x => x.f));
-    return { days, list, toBuy: list.filter(f => f.ticket === 'tobuy'), count: k => list.filter(f => f.ticket === k).length };
+    return { days, list, toBuy: list.filter(f => f.ticket === 'tobuy' && !f.watched), count: k => list.filter(f => f.ticket === k).length };
   }
   const filterName = () => { const c = document.querySelector(`#filters [data-f="${filter}"]`); return c && c.firstChild ? c.firstChild.textContent.trim() : filter; };
   const fit1 = (ctx, t, w) => wrapLines(ctx, t, w, 1)[0] || '';
@@ -2020,7 +2081,7 @@ legend{padding:0;margin-bottom:6px}
     }
     y += BH + 15;
     // summary line
-    const sum = [`${data.list.length} ${data.list.length === 1 ? 'entry' : 'entries'}`, `🎫 ${data.count('badge')} of ${BADGE_MAX} badge passes`, `💵 ${data.toBuy.length} to buy`, `✓ ${data.count('bought')} bought`];
+    const sum = [`${data.list.length} ${data.list.length === 1 ? 'entry' : 'entries'}`, `🎫 ${data.count('badge')} of ${BADGE_MAX} badge passes`, `💵 ${data.toBuy.length} to buy`, `✓ ${data.count('bought')} bought`, ...(data.list.some(f => f.watched) ? [`👁 ${data.list.filter(f => f.watched).length} watched`] : [])];
     if (filter !== 'all') sum.unshift(`Filter: ${filterName()}`);
     if (!dry) { setFont(ctx, 600, 8.5, FB, 'normal', 0); ctx.fillStyle = SC.muted; ctx.fillText(sum.join('   ·   '), M, y); }
     y += 13;
@@ -2060,7 +2121,8 @@ legend{padding:0;margin-bottom:6px}
           setFont(ctx, 600, 7.8 * s, FB, 'normal', 0); ctx.fillStyle = SC.muted;
           cl.forEach((t, k) => ctx.fillText(t, cCin, by + k * lh));
           const tk = TKT[f.ticket];
-          if (tk) {
+          if (f.watched) drawSheetRating(ctx, cTkt, by, s, f);
+          else if (tk) {
             setFont(ctx, 700, 7.6 * s, FB, 'normal', 0); const pw = ctx.measureText(tk[0]).width + 10 * s, ph = 13 * s;
             ctx.fillStyle = tk[1]; rr(ctx, cTkt, by - fs + 0.5 * s, pw, ph, ph / 2); ctx.fill();
             ctx.fillStyle = tk[2]; ctx.fillText(tk[0], cTkt + 5 * s, by - fs + 0.5 * s + ph / 2 + 2.7 * s);
@@ -2193,6 +2255,114 @@ legend{padding:0;margin-bottom:6px}
       if (r === 'failed') hint.textContent = "Couldn't save the PDF here. Try again, or use a different browser.";
     } catch (_) { hint.textContent = "Couldn't make the PDF. Try again."; }
     finally { btn.disabled = false; btn.textContent = 'Download PDF'; }
+  };
+  /* ---------- watched + ratings ----------
+     Once a screening has ended (Philippine time), its card gets a "★ Rate" button. Rating it (½-star steps,
+     optional orange heart, like Letterboxd) marks it watched. Stored on the entry: watched, rating, liked. */
+  const LB_GREEN = '#00e054', LB_ORANGE = '#ff8000';
+  const STAR_D = 'M12 2.2l2.95 6.3 6.85.75-5.1 4.65 1.42 6.75L12 17.2l-6.12 3.45 1.42-6.75L2.2 9.25l6.85-.75z';
+  const HEART_D = 'M12 20.6s-7.6-4.6-9.4-9.3C1.4 8 3.4 4.6 6.9 4.6c2.1 0 3.6 1.2 5.1 3.1 1.5-1.9 3-3.1 5.1-3.1 3.5 0 5.5 3.4 4.3 6.7-1.8 4.7-9.4 9.3-9.4 9.3z';
+  const EYE_STK = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.6" fill="#00c030" stroke="#071433" stroke-width="1.4"/><path d="M4.6 12c1.9-3 4.4-4.6 7.4-4.6s5.5 1.6 7.4 4.6c-1.9 3-4.4 4.6-7.4 4.6S6.5 15 4.6 12z" fill="none" stroke="#071433" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.3" fill="#071433"/></svg>';
+  const starText = r => '★'.repeat(Math.floor(r)) + (r % 1 ? '½' : '');
+  const isShorts = f => /qcshorts/i.test(f.section || '') || /^qcshorts/i.test(f.title || '');   // shorts programs get one general rating
+  // Philippine time (UTC+8, no daylight saving) as minutes; a screening has ended once its end time has passed.
+  const phNowMin = () => Math.floor((Date.now() + 8 * 3600000) / 60000);
+  const dayStartMin = id => Date.UTC(+id.slice(0, 4), +id.slice(5, 7) - 1, +id.slice(8, 10)) / 60000;
+  function hasEnded(f) {
+    if (!f || !/^\d{4}-\d{2}-\d{2}$/.test(f.day || '')) return false;
+    const st = toMin(f.time), en = toMin(f.end);
+    const end = dayStartMin(f.day) + (en != null ? en + (st != null && en < st ? 1440 : 0) : st != null ? st + 120 : 1440);
+    return phNowMin() >= end;
+  }
+  let endedSig = '';
+  setInterval(() => { const sig = films.filter(f => !f.cancelled && hasEnded(f)).map(f => f.id).join(','); if (sig !== endedSig) { endedSig = sig; refresh(); } }, 60000);
+  function ratingTag(f, editable) {
+    const r = +f.rating || 0, kids = [h('span', { text: isShorts(f) ? 'Watched · overall' : 'Watched' })];
+    if (r) kids.push(h('span', { class: 'rs', text: starText(r), 'aria-label': `${r} out of 5 stars` }));
+    if (f.liked) kids.push(h('span', { class: 'rh', text: '♥', 'aria-label': 'liked' }));
+    return editable
+      ? h('button', { type: 'button', class: 'tag watched', title: 'Change your rating', onclick: e => { e.stopPropagation(); openRate(f); } }, ...kids)
+      : h('span', { class: 'tag watched' }, ...kids);
+  }
+  // canvas: filled stars (a half star for .5) and an optional heart, vertically centred on cy; returns the end x
+  function drawStars(ctx, x, cy, size, r, liked, starCol, heartCol) {
+    const sp = new Path2D(STAR_D), hp = new Path2D(HEART_D), k = size / 24, step = size * 0.92;
+    const full = Math.floor(r), half = r % 1 >= 0.5; let cx = x;
+    for (let i = 0; i < full + (half ? 1 : 0); i++) {
+      ctx.save(); ctx.translate(cx, cy - size / 2); ctx.scale(k, k);
+      if (half && i === full) { ctx.beginPath(); ctx.rect(0, 0, 12, 24); ctx.clip(); }
+      ctx.fillStyle = starCol; ctx.fill(sp); ctx.restore();
+      cx += half && i === full ? step * 0.6 : step;
+    }
+    if (liked) { if (full || half) cx += size * 0.28; ctx.save(); ctx.translate(cx, cy - size / 2); ctx.scale(k, k); ctx.fillStyle = heartCol; ctx.fill(hp); ctx.restore(); cx += size; }
+    return cx;
+  }
+  function drawRatingChip(ctx, x, y, f, right) {
+    const r = +f.rating || 0, sz = 13, rated = r || f.liked;
+    let w;
+    if (rated) w = (Math.floor(r) + (r % 1 ? 0.6 : 0)) * sz * 0.92 + (f.liked ? sz + (r ? sz * 0.28 : 0) : 0) + 14;
+    else { setFont(ctx, 800, 10, FA, 'normal', 1.2); w = ctx.measureText('WATCHED').width + 14; }
+    const x0 = right ? x - w : x;
+    ctx.fillStyle = 'rgba(10,16,41,.88)'; rr(ctx, x0, y, w, 20, 10); ctx.fill();
+    if (rated) drawStars(ctx, x0 + 7, y + 10, sz, r, f.liked, LB_GREEN, LB_ORANGE);
+    else { setFont(ctx, 800, 10, FA, 'normal', 1.2); ctx.fillStyle = LB_GREEN; ctx.fillText('WATCHED', x0 + 7, y + 14); }
+  }
+  function drawSheetRating(ctx, x, by, s, f) {
+    const r = +f.rating || 0;
+    if (r || f.liked) drawStars(ctx, x + 1, by - 3 * s, 9.5 * s, r, f.liked, '#00a83f', '#f07300');
+    else { setFont(ctx, 700, 7.6 * s, FB, 'normal', 0); ctx.fillStyle = '#00873a'; ctx.fillText('👁 Watched', x + 1, by); }
+  }
+  // rating dialog
+  const rateDlg = $('#rateDlg'); let rating = { f: null, v: 0, liked: false };
+  $('#rStars').replaceChildren(...[0, 1, 2, 3, 4].map(() => { const st = h('span', { class: 'rstar' }); st.innerHTML = `<svg class="off" viewBox="0 0 24 24" aria-hidden="true"><path d="${STAR_D}"/></svg><svg class="on" viewBox="0 0 24 24" aria-hidden="true"><path d="${STAR_D}"/></svg>`; return st; }));
+  $('#rHeart').innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${HEART_D}" fill="currentColor"/></svg>`;
+  function paintStars(v) {
+    $('#rStars').querySelectorAll('.rstar').forEach((st, i) => st.style.setProperty('--f', `${Math.max(0, Math.min(1, v - i)) * 100}%`));
+    $('#rStars').setAttribute('aria-valuenow', String(v)); $('#rStars').setAttribute('aria-valuetext', v ? `${v} out of 5 stars` : 'No rating');
+  }
+  function paintVal() {
+    const v = rating.v;
+    $('#rVal').replaceChildren(...(v || rating.liked
+      ? ['Your rating: ', v ? h('b', { text: starText(v) }) : 'no stars', rating.liked ? h('span', { class: 'rh', text: ' ♥' }) : null].filter(Boolean)
+      : ['Tap a star (its left half for a half star). Stars are optional.']));
+  }
+  const valAt = e => {
+    const stars = [...$('#rStars').querySelectorAll('.rstar')];
+    for (let i = 0; i < stars.length; i++) { const b = stars[i].getBoundingClientRect(); if (e.clientX <= b.right || i === stars.length - 1) return e.clientX < b.left + b.width / 2 ? i + 0.5 : i + 1; }
+    return 5;
+  };
+  $('#rStars').addEventListener('pointermove', e => { if (e.pointerType === 'mouse') paintStars(valAt(e)); });
+  $('#rStars').addEventListener('pointerleave', () => paintStars(rating.v));
+  $('#rStars').addEventListener('click', e => { const v = valAt(e); rating.v = v === rating.v ? 0 : v; paintStars(rating.v); paintVal(); });
+  $('#rStars').addEventListener('keydown', e => {
+    let v = rating.v; const k = e.key;
+    if (k === 'ArrowRight' || k === 'ArrowUp') v += 0.5; else if (k === 'ArrowLeft' || k === 'ArrowDown') v -= 0.5; else if (k === 'Home') v = 0; else if (k === 'End') v = 5; else return;
+    e.preventDefault(); rating.v = Math.max(0, Math.min(5, v)); paintStars(rating.v); paintVal();
+  });
+  $('#rHeart').onclick = () => { rating.liked = !rating.liked; $('#rHeart').setAttribute('aria-pressed', String(rating.liked)); $('#rLikeL').textContent = rating.liked ? 'Liked' : 'Like'; paintVal(); };
+  function openRate(f) {
+    if (!canWrite || !f) return;
+    rating = { f, v: +f.rating || 0, liked: !!f.liked };
+    $('#rateTitle').textContent = f.title || 'Rate';
+    const d = dayOf(f.day);
+    $('#rateSub').textContent = [d ? `${d.wd}, Nov ${d.d}` : '', f.time ? fmtRange(f.time, f.end) : '', f.venue || ''].filter(Boolean).join(' · ');
+    $('#rHeart').setAttribute('aria-pressed', String(rating.liked)); $('#rLikeL').textContent = rating.liked ? 'Liked' : 'Like';
+    $('#rateNote').hidden = !isShorts(f);
+    $('#rUnwatch').hidden = !f.watched; $('#rSave').textContent = f.watched ? 'Save' : 'Save as watched'; $('#rErr').textContent = '';
+    paintStars(rating.v); paintVal(); rateDlg.showModal();
+  }
+  $('#rateClose').onclick = () => rateDlg.close(); $('#rCancel').onclick = () => rateDlg.close();
+  $('#rateForm').addEventListener('submit', async e => {
+    e.preventDefault(); const f = rating.f; if (!f || !db) return;
+    try {
+      await itemsCol().doc(f.id).update({ watched: true, rating: rating.v, liked: rating.liked, watchedAt: f.watchedAt || Date.now() });
+      rateDlg.close(); toast(`${f.title}: ${rating.v ? starText(rating.v) : 'watched'}${rating.liked ? ' ♥' : ''}`);
+    } catch (err) { $('#rErr').textContent = dbMsg(err); }
+  });
+  $('#rUnwatch').onclick = async () => {
+    const f = rating.f; if (!f || !db) return;
+    try { await itemsCol().doc(f.id).update({ watched: false, rating: 0, liked: false }); rateDlg.close(); toast(`Marked ${f.title} as not watched`); }
+    catch (err) { $('#rErr').textContent = dbMsg(err); }
   };
   const shMaybeEl = $('#shMaybe'), shHandleEl = $('#shHandle');
   shMaybeEl.checked = shMaybe; shHandleEl.disabled = true;
