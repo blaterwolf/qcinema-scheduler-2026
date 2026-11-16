@@ -163,6 +163,8 @@ button.tag.tobuy{position:relative;z-index:3;cursor:pointer;border:0;font-family
 .tag.watched .rh,.rate-val .rh{color:#ff8000}
 button.tag.watched,button.tag.rate{position:relative;z-index:3;cursor:pointer;font-family:inherit}
 .tag.rate{background:transparent;border-color:#00e054;color:#8dffbe}
+.tag.rate.soon{border-color:var(--line);color:var(--muted)}
+button.tag.rate.soon:hover{background:rgba(0,224,84,.12);border-color:#00e054;color:#8dffbe}
 .tag.rate:hover,button.tag.watched:hover{background:rgba(0,224,84,.22)}
 .card.watched{border-color:rgba(0,224,84,.65)}
 .card.watched .pic:not(.blank)::after{content:"";position:absolute;inset:0;z-index:2;background:rgba(0,224,84,.16);mix-blend-mode:normal;pointer-events:none}
@@ -1140,7 +1142,7 @@ legend{padding:0;margin-bottom:6px}
     if (f.gone) tags.append(h('span', { class: 'tag gone', text: 'No longer in the festival schedule' }));
     if (f.cancelled) tags.prepend(h('span', { class: 'tag cancel', title: f.cancelled.note || '', text: 'Unavailable · screening cancelled' }));
     if (f.watched) tags.prepend(ratingTag(f, canWrite), ...shortsTag(f, canWrite));
-    else if (f.ended && canWrite) tags.prepend(h('button', { type: 'button', class: 'tag rate', title: 'Rate it and mark it watched', onclick: e => { e.stopPropagation(); openRate(f); } }, '★ Rate'));
+    else if (canWrite && !f.cancelled) tags.prepend(h('button', { type: 'button', class: 'tag rate' + (f.ended ? '' : ' soon'), title: f.ended ? 'Rate it and mark it watched' : 'Rate it now and mark it watched, even before this screening', onclick: e => { e.stopPropagation(); openRate(f); } }, '★ Rate'));
     if (withs && withs.length) tags.append(h('span', { class: 'tag with', text: `With ${withs.join(', ')}` }));
     meta.append(tags);
     if (f.notes) meta.append(h('p', { class: 'note', text: f.notes }));
