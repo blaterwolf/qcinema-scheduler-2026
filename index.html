@@ -173,6 +173,37 @@ button.tag.watched,button.tag.rate{position:relative;z-index:3;cursor:pointer;fo
 .rheart[aria-pressed="true"]+span{color:#ff8000}
 .rate-note{margin:-4px 0 0;padding:8px 12px;border-radius:10px;background:rgba(0,224,84,.08);border:1px solid rgba(0,224,84,.3);color:#8dffbe;font-size:13px;text-align:center}
 dialog#rateDlg{width:min(440px,calc(100vw - 24px))}
+/* Shorts programs: an overall rating plus one per short */
+.rate-note b{color:#c8ffdd}
+dialog#rateDlg.has-shorts{width:min(520px,calc(100vw - 24px))}
+#rateDlg.has-shorts .dlg-f{position:sticky;bottom:0;z-index:2;margin:0 -20px -20px;padding:12px 20px 16px;background:var(--panel);border-top:1px solid var(--line)}
+.rshorts{display:grid;margin:0;padding:12px 0 0;border-top:1px solid var(--line)}
+.rshorts[hidden]{display:none}
+.rshorts h3{margin:0 0 2px;font-family:var(--display);font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
+.srow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:6px 10px;padding:9px 0;border-bottom:1px solid rgba(38,52,108,.7)}
+.srow:last-of-type{border-bottom:0}
+.srow .sinfo{display:flex;align-items:center;gap:11px;min-width:0}
+.srow .sthumb{flex:none;width:40px;height:60px;border-radius:6px;object-fit:cover;background:var(--deep);border:1px solid var(--line)}
+.srow .stt{display:grid;gap:1px;min-width:0}
+.srow .stt b{font-size:14.5px;line-height:1.25;overflow-wrap:anywhere}
+.srow .stt i{color:var(--muted);font-size:12.5px;line-height:1.3}
+.srow .stt span{color:var(--faint);font-size:12px;line-height:1.3}
+.rstars.sstars{gap:1px;border-radius:6px;outline-offset:3px}
+.sstars .rstar{width:27px;height:27px}
+.rheart.sm{width:36px;height:36px}
+.rheart.sm svg{width:18px;height:18px}
+.rshorts-sum{margin:8px 0 0;text-align:center;color:var(--muted);font-size:12.5px}
+@media (max-width:440px){.srow{display:flex;flex-wrap:wrap;align-items:center;column-gap:14px}.srow .sinfo{flex:0 0 100%}.sstars .rstar{width:32px;height:32px}}
+.tag.shorts{background:transparent;border-color:rgba(0,224,84,.45);color:#8dffbe;font-weight:600}
+button.tag.shorts{position:relative;z-index:3;cursor:pointer;font-family:inherit}
+button.tag.shorts:hover{background:rgba(0,224,84,.16)}
+.share[hidden]{display:none}
+.sr-gal{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,330px));justify-content:center;gap:16px;width:100%}
+.sr-gal[hidden]{display:none}
+.sr-gal.tall{grid-template-columns:minmax(0,380px);justify-content:center}
+.sr-item{margin:0;display:grid;gap:6px;min-width:0}
+.sr-item figcaption{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+.share-ph.r78{aspect-ratio:7/8;max-width:340px}
 .rate-sub{margin:-6px 0 0;color:var(--muted);font-size:13.5px}
 .rate-row{display:flex;align-items:center;justify-content:center;gap:16px;padding:6px 0}
 .rstars{display:flex;gap:2px;border-radius:10px;touch-action:manipulation;cursor:pointer;outline-offset:6px}
@@ -508,7 +539,7 @@ legend{padding:0;margin-bottom:6px}
 <section class="wrap share" id="share" aria-labelledby="shareTitle">
   <div class="share-copy">
     <h2 id="shareTitle">Export as Image</h2>
-    <p>Every day you're going on one picture: a 16:9 post for X, or an iPhone lock-screen wallpaper that leaves the top clear for the clock. Your handle and profile picture go in the header, a link to the planner goes at the bottom, and 🎫 or 💵 marks your ticket status. It updates whenever the schedule above changes.</p>
+    <p>Every day you're going on one picture: a 16:9 post for X, or an iPhone lock-screen wallpaper that leaves the top clear for the clock. Your handle and profile picture go in the header, a link to the planner goes at the bottom, and 🎫 or 💵 marks your ticket status. Shorts programs show your overall rating here; your rating for each short gets its own image below. It updates whenever the schedule above changes.</p>
     <fieldset><legend>Size</legend><div class="opts">
       <label><input type="radio" name="shfmt" value="x"><span>X post · 3200 × 1800</span></label>
       <label><input type="radio" name="shfmt" value="phone"><span>iPhone wallpaper · 1290 × 2796</span></label>
@@ -530,6 +561,20 @@ legend{padding:0;margin-bottom:6px}
     <div class="share-ph" id="shPh">Building your image…</div>
     <img id="shImg" alt="Your QCinema 2026 schedule as one image" hidden>
     <figcaption id="shCap"></figcaption>
+  </figure>
+</section>
+
+<section class="wrap share shorts" id="shortsX" aria-labelledby="shortsXTitle" hidden>
+  <div class="share-copy">
+    <h2 id="shortsXTitle">Shorts ratings</h2>
+    <p>Your rating for each short in the shorts programs you've watched. The schedule image above keeps one overall rating per program. For X it makes one 7:8 picture per program: post two to four together and X shows them side by side, ready to swipe. With the wallpaper size it makes one lock-screen picture.</p>
+    <button type="button" class="add" id="srSave" disabled>Save image</button>
+    <p class="hint" id="srHint" role="status"></p>
+  </div>
+  <figure class="share-fig">
+    <div class="share-ph r78" id="srPh">Building your images…</div>
+    <div class="sr-gal" id="srGal" hidden></div>
+    <figcaption id="srCap"></figcaption>
   </figure>
 </section>
 
@@ -679,6 +724,7 @@ legend{padding:0;margin-bottom:6px}
     </div>
     <p class="rate-val" id="rVal"></p>
     <p class="rate-note" id="rateNote" hidden>Shorts program: give one general rating for the whole program instead of rating each short.</p>
+    <div class="rshorts" id="rShorts" hidden></div>
     <div class="dlg-f">
       <button type="button" class="btn danger" id="rUnwatch" hidden>Not watched</button>
       <span class="sp"></span>
@@ -713,7 +759,7 @@ legend{padding:0;margin-bottom:6px}
   const posters = new Map();  // filmId -> shared poster image
   const names = new Map();    // uid -> profile name
   let withAll = new Map();    // sid -> [uid] who picked that screening
-  const CAT = { ready: false, ev: new Map(), films: new Map(), byFilm: new Map(), byDay: new Map(), cancel: new Map(), fetchedAt: '' };
+  const CAT = { ready: false, ev: new Map(), films: new Map(), byFilm: new Map(), byDay: new Map(), cancel: new Map(), shorts: new Map(), fetchedAt: '' };
   const cancelOf = sid => CAT.cancel.get(sid) || null;   // { note, source, label } when that screening won't push through
   const cardCache = new Map();
   const rows = {};
@@ -834,6 +880,8 @@ legend{padding:0;margin-bottom:6px}
       const cx = j.cancelled || {};
       for (const [fid, info] of Object.entries(cx.films || {})) for (const ev of CAT.byFilm.get(fid) || []) CAT.cancel.set(ev.sid, info || {});
       for (const [sid, info] of Object.entries(cx.screenings || {})) if (CAT.ev.has(sid)) CAT.cancel.set(sid, info || {});
+      // shorts programs: the shorts in each one (schedule.json "shorts"), so each short can get its own rating
+      for (const [fid, list] of Object.entries(j.shorts || {})) if (Array.isArray(list)) CAT.shorts.set(fid, list.filter(a => Array.isArray(a) && a[0] && a[1]).map(a => ({ key: String(a[0]), title: String(a[1]), aka: a[2] || '', director: a[3] || '', countries: a[4] || '', img: typeof a[5] === 'string' && /^shorts\/[a-z0-9-]+\.(?:jpe?g|png|webp)$/.test(a[5]) ? a[5] : '' })));
       CAT.fetchedAt = j.fetchedAt || ''; CAT.ready = true;
       const d = new Date(CAT.fetchedAt);
       $('#catAsOf').textContent = isNaN(d) ? '' : `Festival schedule as of ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.`;
@@ -845,11 +893,21 @@ legend{padding:0;margin-bottom:6px}
     const fm = CAT.films.get(ev.filmId) || {};
     return { title: fm.title || '', year: fm.year || '', day: ev.date, time: ev.start, end: ev.end, venue: ev.venue, section: fm.program || '' };
   }
+  // per-short ratings on a shorts program entry: { <short key>: { r: 0–5 in ½ steps, l: liked } }
+  function cleanShorts(o) {
+    const out = {};
+    if (o && typeof o === 'object') for (const [k, v] of Object.entries(o)) {
+      if (!v || typeof v !== 'object') continue;
+      const r = Math.round(Math.max(0, Math.min(5, +v.r || 0)) * 2) / 2, l = !!v.l;
+      if (r || l) out[k] = { r, l };
+    }
+    return out;
+  }
   // A festival item stores only its screening id (sid) plus personal fields; title, time and cinema come from the catalog.
   function resolveItem(id, it) {
     if (it.sid) {
       const ev = CAT.ev.get(it.sid), sn = it.snap || {};
-      const base = { id, sid: it.sid, catalog: true, kind: 'film', watched: !!it.watched, rating: +it.rating || 0, liked: !!it.liked, plan: it.plan || 'going', ticket: it.ticket || '', notes: it.notes || '', orGroup: it.orGroup || '', order: it.order ?? 0, ownImage: !!(it.image && it.image.id) };
+      const base = { id, sid: it.sid, catalog: true, kind: 'film', watched: !!it.watched, rating: +it.rating || 0, liked: !!it.liked, shorts: cleanShorts(it.shorts), plan: it.plan || 'going', ticket: it.ticket || '', notes: it.notes || '', orGroup: it.orGroup || '', order: it.order ?? 0, ownImage: !!(it.image && it.image.id) };
       if (!ev) return Object.assign(base, { title: sn.title || 'Screening', year: sn.year || '', day: sn.day || '', time: sn.time || '', end: sn.end || '', venue: sn.venue || '', section: sn.section || '', gone: CAT.ready, image: it.image || null });
       const fm = CAT.films.get(ev.filmId) || {};
       return Object.assign(base, { filmId: ev.filmId, cancelled: cancelOf(ev.sid), title: fm.title || '', year: fm.year || '', day: ev.date, time: ev.start, end: ev.end, venue: ev.venue, section: fm.program || '', director: fm.director || '', guests: ev.guests, extras: evExtras(ev, fm), logline: fm.logline || '', image: it.image || posters.get(ev.filmId) || null });
@@ -1081,7 +1139,7 @@ legend{padding:0;margin-bottom:6px}
     if (dups && dups.length) tags.append(h('span', { class: 'tag dup', text: `Also on ${dups.join(', ')}` }));
     if (f.gone) tags.append(h('span', { class: 'tag gone', text: 'No longer in the festival schedule' }));
     if (f.cancelled) tags.prepend(h('span', { class: 'tag cancel', title: f.cancelled.note || '', text: 'Unavailable · screening cancelled' }));
-    if (f.watched) tags.prepend(ratingTag(f, canWrite));
+    if (f.watched) tags.prepend(ratingTag(f, canWrite), ...shortsTag(f, canWrite));
     else if (f.ended && canWrite) tags.prepend(h('button', { type: 'button', class: 'tag rate', title: 'Rate it and mark it watched', onclick: e => { e.stopPropagation(); openRate(f); } }, '★ Rate'));
     if (withs && withs.length) tags.append(h('span', { class: 'tag with', text: `With ${withs.join(', ')}` }));
     meta.append(tags);
@@ -1777,34 +1835,7 @@ legend{padding:0;margin-bottom:6px}
   }
   function drawPhoneBody(ctx, W, H, list, loaded, logo14, logoGT, hdl, avIm) {
     const { M, DATEW, GAP, TOP, BOTTOM, PAD } = PH;
-    const lh = 104, gh = 90;
-    const lw = logo14 ? logo14.naturalWidth * lh / logo14.naturalHeight : 0, gw = logoGT ? logoGT.naturalWidth * gh / logoGT.naturalHeight : 0;
-    let hx = (W - (lw + (lw && gw ? 44 : 0) + gw)) / 2;
-    if (logo14) { ctx.drawImage(logo14, hx, TOP, lw, lh); hx += lw + 44; }
-    if (logoGT) ctx.drawImage(logoGT, hx, TOP + (lh - gh) / 2, gw, gh);
-    ctx.textAlign = 'center';
-    if (!logo14 && !logoGT) { setFont(ctx, 900, 84, FA, 'condensed', 0); ctx.fillStyle = C.ink; ctx.fillText('QCINEMA 2026', W / 2, TOP + 86); }
-    const label = tagged(hdl ? 'SCHEDULE FOR' : 'NOV 13–22, 2026 · QUEZON CITY'), big = hdl || 'MY QCINEMA SCHEDULE';
-    let rowsTop;
-    if (avIm) {
-      const D = 136, G = 30, top = TOP + lh + 44, maxT = W - 2 * M - D - G;
-      let bs = 64; setFont(ctx, 800, bs, FA, 'normal', 0);
-      while (bs > 30 && ctx.measureText(big).width > maxT) { bs -= 2; setFont(ctx, 800, bs, FA, 'normal', 0); }
-      const bigT = wrapLines(ctx, big, maxT, 1)[0] || '', bw = ctx.measureText(bigT).width;
-      setFont(ctx, 800, 22, FA, 'normal', 4); const lw2 = ctx.measureText(label).width;
-      const gx = (W - (D + G + Math.max(bw, lw2))) / 2, x2 = gx + D + G, mid = top + D / 2;
-      drawAvatar(ctx, avIm, gx, top, D);
-      ctx.textAlign = 'left'; ctx.fillStyle = C.cyan; ctx.fillText(label, x2, mid - bs / 2 + 4);
-      setFont(ctx, 800, bs, FA, 'normal', 0); ctx.fillStyle = hdl ? C.sun : C.ink; ctx.fillText(bigT, x2, mid + bs / 2 + 14);
-      rowsTop = top + D + 44;
-    } else {
-      setFont(ctx, 800, 22, FA, 'normal', 4); ctx.fillStyle = C.cyan;
-      ctx.fillText(label, W / 2, TOP + lh + 64);
-      let bs = 64; setFont(ctx, 800, bs, FA, 'normal', 0);
-      while (bs > 30 && ctx.measureText(big).width > W - 2 * M) { bs -= 2; setFont(ctx, 800, bs, FA, 'normal', 0); }
-      ctx.fillStyle = hdl ? C.sun : C.ink; ctx.fillText(big, W / 2, TOP + lh + 70 + bs);
-      rowsTop = TOP + lh + 70 + bs + 40;
-    }
+    const rowsTop = drawPhoneHeader(ctx, W, logo14, logoGT, avIm, tagged(hdl ? 'SCHEDULE FOR' : 'NOV 13–22, 2026 · QUEZON CITY'), hdl || 'MY QCINEMA SCHEDULE', !!hdl);
     ctx.textAlign = 'left';
     const n = list.length, rowH = Math.max(140, Math.min(260, Math.floor((H - BOTTOM - rowsTop) / n)));
     const tileH = rowH - 2 * PAD, x0 = M + DATEW, avail = W - M - x0;
@@ -1853,6 +1884,61 @@ legend{padding:0;margin-bottom:6px}
       ctx.fillStyle = C.rose; rr(ctx, px, y + 32, tw, 18, 9); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.fillText('TBC', px + 6, y + 45);
     }
   }
+  // Header of the X post: both logos on the left; label, big line (handle) and planner link right-aligned beside the photo.
+  function drawXHeader(ctx, W, logo14, logoGT, avIm, label, big, isHandle) {
+    const { M, TOP } = SH;
+    let hx = M;
+    const HC = 90;   // header centre line: both logos, the text block and the photo centre on it
+    if (logo14) { const lh = 88, lw = logo14.naturalWidth * lh / logo14.naturalHeight; ctx.drawImage(logo14, hx, HC - lh / 2, lw, lh); hx += lw + 36; }
+    else { setFont(ctx, 900, 60, FA, 'condensed', 0); ctx.fillStyle = C.ink; ctx.fillText('QCINEMA 2026', hx, HC + 22); hx += ctx.measureText('QCINEMA 2026').width + 36; }
+    if (logoGT) { const gh = 76, gw = logoGT.naturalWidth * gh / logoGT.naturalHeight; ctx.drawImage(logoGT, hx, HC - gh / 2, gw, gh); hx += gw; }
+    const AVD = 92, tx = avIm ? W - M - AVD - 22 : W - M;   // tx: right edge of the handle text
+    if (avIm) drawAvatar(ctx, avIm, W - M - AVD, HC - AVD / 2, AVD);
+    const rightMax = tx - (hx + 48);
+    ctx.textAlign = 'right';
+    setFont(ctx, 800, 15, FA, 'normal', 3); ctx.fillStyle = C.cyan;
+    ctx.fillText(label, tx, HC - 36);
+    let bs = 48; setFont(ctx, 800, bs, FA, 'normal', 0);
+    while (bs > 22 && ctx.measureText(big).width > rightMax) { bs -= 2; setFont(ctx, 800, bs, FA, 'normal', 0); }
+    ctx.fillStyle = isHandle ? C.sun : C.ink; ctx.fillText(wrapLines(ctx, big, rightMax, 1)[0] || '', tx, HC + 12);
+    drawSiteLink(ctx, tx, HC + 44, 'right', 17);   // under the handle, right-aligned with it
+    ctx.textAlign = 'left';
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(M, TOP - 18.5); ctx.lineTo(W - M, TOP - 18.5); ctx.stroke();
+  }
+  // Header of the wallpaper (below the clock zone): logos, then label + big line, beside the photo when there is one.
+  // Returns where the content below it starts.
+  function drawPhoneHeader(ctx, W, logo14, logoGT, avIm, label, big, isHandle) {
+    const { M, TOP } = PH;
+    const lh = 104, gh = 90;
+    const lw = logo14 ? logo14.naturalWidth * lh / logo14.naturalHeight : 0, gw = logoGT ? logoGT.naturalWidth * gh / logoGT.naturalHeight : 0;
+    let hx = (W - (lw + (lw && gw ? 44 : 0) + gw)) / 2;
+    if (logo14) { ctx.drawImage(logo14, hx, TOP, lw, lh); hx += lw + 44; }
+    if (logoGT) ctx.drawImage(logoGT, hx, TOP + (lh - gh) / 2, gw, gh);
+    ctx.textAlign = 'center';
+    if (!logo14 && !logoGT) { setFont(ctx, 900, 84, FA, 'condensed', 0); ctx.fillStyle = C.ink; ctx.fillText('QCINEMA 2026', W / 2, TOP + 86); }
+    let rowsTop;
+    if (avIm) {
+      const D = 136, G = 30, top = TOP + lh + 44, maxT = W - 2 * M - D - G;
+      let bs = 64; setFont(ctx, 800, bs, FA, 'normal', 0);
+      while (bs > 30 && ctx.measureText(big).width > maxT) { bs -= 2; setFont(ctx, 800, bs, FA, 'normal', 0); }
+      const bigT = wrapLines(ctx, big, maxT, 1)[0] || '', bw = ctx.measureText(bigT).width;
+      setFont(ctx, 800, 22, FA, 'normal', 4); const lw2 = ctx.measureText(label).width;
+      const gx = (W - (D + G + Math.max(bw, lw2))) / 2, x2 = gx + D + G, mid = top + D / 2;
+      drawAvatar(ctx, avIm, gx, top, D);
+      ctx.textAlign = 'left'; ctx.fillStyle = C.cyan; ctx.fillText(label, x2, mid - bs / 2 + 4);
+      setFont(ctx, 800, bs, FA, 'normal', 0); ctx.fillStyle = isHandle ? C.sun : C.ink; ctx.fillText(bigT, x2, mid + bs / 2 + 14);
+      rowsTop = top + D + 44;
+    } else {
+      setFont(ctx, 800, 22, FA, 'normal', 4); ctx.fillStyle = C.cyan;
+      ctx.fillText(label, W / 2, TOP + lh + 64);
+      let bs = 64; setFont(ctx, 800, bs, FA, 'normal', 0);
+      while (bs > 30 && ctx.measureText(big).width > W - 2 * M) { bs -= 2; setFont(ctx, 800, bs, FA, 'normal', 0); }
+      ctx.fillStyle = isHandle ? C.sun : C.ink; ctx.fillText(big, W / 2, TOP + lh + 70 + bs);
+      rowsTop = TOP + lh + 70 + bs + 40;
+    }
+    ctx.textAlign = 'left';
+    return rowsTop;
+  }
   const FILTER_TAG = { watched: 'WATCHED', maybe: 'MAYBES', badge: 'BADGE SCREENINGS', tobuy: 'TICKETS TO BUY', bought: 'TICKETS BOUGHT', outside: 'OUTSIDE QCINEMA' };
   const tagged = t => FILTER_TAG[filter] ? `${FILTER_TAG[filter]} · ${t}` : t;
   function renderShareFilter() {
@@ -1877,7 +1963,7 @@ legend{padding:0;margin-bottom:6px}
     setFont(ctx, 600, size, FB, 'normal', 0); ctx.fillStyle = C.muted; ctx.fillText(pre, x0, y);
     setFont(ctx, 700, size, FB, 'normal', 0); ctx.fillStyle = C.cyan; ctx.fillText(SITE_LINK, x0 + pw, y);
   }
-  function scheduleShare() { renderShareFilter(); clearTimeout(shareTimer); shareTimer = setTimeout(buildShare, 500); scheduleSheet(); }
+  function scheduleShare() { renderShareFilter(); clearTimeout(shareTimer); shareTimer = setTimeout(buildShare, 500); scheduleSheet(); scheduleShorts(); }
   async function buildShare() {
     const my = ++shareGen;
     const list = DAYS.map(day => {
@@ -1916,25 +2002,7 @@ legend{padding:0;margin-bottom:6px}
 
     if (phone) drawPhoneBody(ctx, W, H, list, loaded, logo14, logoGT, hdl, avIm);
     else {
-    // header: festival logo, Genre'teurs logo, "Schedule for @handle"
-    let hx = M;
-    const HC = 90;   // header centre line: both logos, the text block and the photo centre on it
-    if (logo14) { const lh = 88, lw = logo14.naturalWidth * lh / logo14.naturalHeight; ctx.drawImage(logo14, hx, HC - lh / 2, lw, lh); hx += lw + 36; }
-    else { setFont(ctx, 900, 60, FA, 'condensed', 0); ctx.fillStyle = C.ink; ctx.fillText('QCINEMA 2026', hx, HC + 22); hx += ctx.measureText('QCINEMA 2026').width + 36; }
-    if (logoGT) { const gh = 76, gw = logoGT.naturalWidth * gh / logoGT.naturalHeight; ctx.drawImage(logoGT, hx, HC - gh / 2, gw, gh); hx += gw; }
-    const AVD = 92, tx = avIm ? W - M - AVD - 22 : W - M;   // tx: right edge of the handle text
-    if (avIm) drawAvatar(ctx, avIm, W - M - AVD, HC - AVD / 2, AVD);
-    const rightMax = tx - (hx + 48);
-    ctx.textAlign = 'right';
-    setFont(ctx, 800, 15, FA, 'normal', 3); ctx.fillStyle = C.cyan;
-    ctx.fillText(tagged(hdl ? 'SCHEDULE FOR' : 'NOV 13–22, 2026'), tx, HC - 36);
-    const big = hdl || 'MY SCHEDULE';
-    let bs = 48; setFont(ctx, 800, bs, FA, 'normal', 0);
-    while (bs > 22 && ctx.measureText(big).width > rightMax) { bs -= 2; setFont(ctx, 800, bs, FA, 'normal', 0); }
-    ctx.fillStyle = hdl ? C.sun : C.ink; ctx.fillText(wrapLines(ctx, big, rightMax, 1)[0] || '', tx, HC + 12);
-    drawSiteLink(ctx, tx, HC + 44, 'right', 17);   // under the handle, right-aligned with it
-    ctx.textAlign = 'left';
-    ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(M, TOP - 18.5); ctx.lineTo(W - M, TOP - 18.5); ctx.stroke();
+    drawXHeader(ctx, W, logo14, logoGT, avIm, tagged(hdl ? 'SCHEDULE FOR' : 'NOV 13–22, 2026'), hdl || 'MY SCHEDULE', !!hdl);
 
     // one column per day
     const n = list.length, colW = Math.min(300, (W - 2 * M - GAP * (n - 1)) / n), cx0 = (W - n * colW - GAP * (n - 1)) / 2;
@@ -2209,6 +2277,13 @@ legend{padding:0;margin-bottom:6px}
     try { const r = await dl.save({ filename: name, data: blob }); if (r && r.status === 'saved') toast('PDF saved'); return 'saved'; }
     catch (e) { const c = e && e.code; if (c === 'declined') return 'cancelled'; if (c === 'rate_limited') { toast('A save prompt is already open.'); return 'cancelled'; } return 'failed'; }
   }
+  async function saveOut(blob, name, okMsg) {
+    if (typeof offerFile === 'function') return offerFile(blob, name, blob.type);   // GitHub copy
+    const dl = typeof use === 'function' ? await use('downloads') : null;            // Claude artifact
+    if (!dl) return 'failed';
+    try { const r = await dl.save({ filename: name, data: blob }); if (r && r.status === 'saved') toast(okMsg); return 'saved'; }
+    catch (e) { const c = e && e.code; if (c === 'declined') return 'cancelled'; if (c === 'rate_limited') { toast('A save prompt is already open.'); return 'cancelled'; } return 'failed'; }
+  }
   let sheetTimer = null, sheetGen = 0, sheetUrl = null;
   function scheduleSheet() {
     const el = $('#pdfFilter');
@@ -2264,7 +2339,9 @@ legend{padding:0;margin-bottom:6px}
   const HEART_D = 'M12 20.6s-7.6-4.6-9.4-9.3C1.4 8 3.4 4.6 6.9 4.6c2.1 0 3.6 1.2 5.1 3.1 1.5-1.9 3-3.1 5.1-3.1 3.5 0 5.5 3.4 4.3 6.7-1.8 4.7-9.4 9.3-9.4 9.3z';
   const EYE_STK = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.6" fill="#00c030" stroke="#071433" stroke-width="1.4"/><path d="M4.6 12c1.9-3 4.4-4.6 7.4-4.6s5.5 1.6 7.4 4.6c-1.9 3-4.4 4.6-7.4 4.6S6.5 15 4.6 12z" fill="none" stroke="#071433" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.3" fill="#071433"/></svg>';
   const starText = r => '★'.repeat(Math.floor(r)) + (r % 1 ? '½' : '');
-  const isShorts = f => /qcshorts/i.test(f.section || '') || /^qcshorts/i.test(f.title || '');   // shorts programs get one general rating
+  const lineupOf = f => (f && f.filmId && CAT.shorts.get(f.filmId)) || null;   // the shorts in a shorts program
+  const isShorts = f => !!lineupOf(f) || /qcshorts/i.test(f.section || '') || /^qcshorts/i.test(f.title || '');   // shorts programs: an overall rating (+ one per short)
+  const shortsRated = f => { const s = f.shorts || {}; return (lineupOf(f) || []).filter(x => s[x.key]); };
   // Philippine time (UTC+8, no daylight saving) as minutes; a screening has ended once its end time has passed.
   const phNowMin = () => Math.floor((Date.now() + 8 * 3600000) / 60000);
   const dayStartMin = id => Date.UTC(+id.slice(0, 4), +id.slice(5, 7) - 1, +id.slice(8, 10)) / 60000;
@@ -2283,6 +2360,13 @@ legend{padding:0;margin-bottom:6px}
     return editable
       ? h('button', { type: 'button', class: 'tag watched', title: 'Change your rating', onclick: e => { e.stopPropagation(); openRate(f); } }, ...kids)
       : h('span', { class: 'tag watched' }, ...kids);
+  }
+  // "3 of 5 shorts rated" next to a shorts program's rating; opens the dialog at the shorts
+  function shortsTag(f, editable) {
+    const L = lineupOf(f); if (!L) return [];
+    const n = shortsRated(f).length; if (!n && !editable) return [];
+    const text = n ? `${n} of ${L.length} shorts rated` : `Rate each of the ${L.length} shorts`;
+    return [editable ? h('button', { type: 'button', class: 'tag shorts', title: 'Rate each short in this program', onclick: e => { e.stopPropagation(); openRate(f, true); } }, text) : h('span', { class: 'tag shorts', text })];
   }
   // canvas: filled stars (a half star for .5) and an optional heart, vertically centred on cy; returns the end x
   function drawStars(ctx, x, cy, size, r, liked, starCol, heartCol) {
@@ -2340,30 +2424,309 @@ legend{padding:0;margin-bottom:6px}
     e.preventDefault(); rating.v = Math.max(0, Math.min(5, v)); paintStars(rating.v); paintVal();
   });
   $('#rHeart').onclick = () => { rating.liked = !rating.liked; $('#rHeart').setAttribute('aria-pressed', String(rating.liked)); $('#rLikeL').textContent = rating.liked ? 'Liked' : 'Like'; paintVal(); };
-  function openRate(f) {
+  function openRate(f, toShorts) {
     if (!canWrite || !f) return;
-    rating = { f, v: +f.rating || 0, liked: !!f.liked };
+    rating = { f, v: +f.rating || 0, liked: !!f.liked, shorts: Object.fromEntries(Object.entries(f.shorts || {}).map(([k, x]) => [k, { r: x.r, l: x.l }])) };
     $('#rateTitle').textContent = f.title || 'Rate';
     const d = dayOf(f.day);
     $('#rateSub').textContent = [d ? `${d.wd}, Nov ${d.d}` : '', f.time ? fmtRange(f.time, f.end) : '', f.venue || ''].filter(Boolean).join(' · ');
     $('#rHeart').setAttribute('aria-pressed', String(rating.liked)); $('#rLikeL').textContent = rating.liked ? 'Liked' : 'Like';
-    $('#rateNote').hidden = !isShorts(f);
+    $('#rateNote').hidden = !isShorts(f); renderShortsRate(f);
     $('#rUnwatch').hidden = !f.watched; $('#rSave').textContent = f.watched ? 'Save' : 'Save as watched'; $('#rErr').textContent = '';
     paintStars(rating.v); paintVal(); rateDlg.showModal();
+    if (toShorts) { const s1 = $('#rShorts .sstars'); if (s1) { s1.scrollIntoView({ block: 'center' }); s1.focus({ preventScroll: true }); } }
   }
   $('#rateClose').onclick = () => rateDlg.close(); $('#rCancel').onclick = () => rateDlg.close();
   $('#rateForm').addEventListener('submit', async e => {
     e.preventDefault(); const f = rating.f; if (!f || !db) return;
     try {
-      await itemsCol().doc(f.id).update({ watched: true, rating: rating.v, liked: rating.liked, watchedAt: f.watchedAt || Date.now() });
-      rateDlg.close(); toast(`${f.title}: ${rating.v ? starText(rating.v) : 'watched'}${rating.liked ? ' ♥' : ''}`);
+      const L = lineupOf(f), n = L ? L.filter(x => rating.shorts[x.key]).length : 0;
+      await itemsCol().doc(f.id).update({ watched: true, rating: rating.v, liked: rating.liked, watchedAt: f.watchedAt || Date.now(), ...(L ? { shorts: shortsOut(f, rating.shorts) } : {}) });
+      rateDlg.close(); toast(`${f.title}: ${rating.v ? starText(rating.v) : 'watched'}${rating.liked ? ' ♥' : ''}${n ? ` · ${n} ${n === 1 ? 'short' : 'shorts'} rated` : ''}`);
     } catch (err) { $('#rErr').textContent = dbMsg(err); }
   });
   $('#rUnwatch').onclick = async () => {
     const f = rating.f; if (!f || !db) return;
-    try { await itemsCol().doc(f.id).update({ watched: false, rating: 0, liked: false }); rateDlg.close(); toast(`Marked ${f.title} as not watched`); }
+    try { await itemsCol().doc(f.id).update({ watched: false, rating: 0, liked: false, ...(Object.keys(f.shorts || {}).length ? { shorts: shortsOut(f, {}) } : {}) }); rateDlg.close(); toast(`Marked ${f.title} as not watched`); }
     catch (err) { $('#rErr').textContent = dbMsg(err); }
   };
+  /* ---------- per-short ratings (rating dialog) ---------- */
+  const STAR_SVG = `<svg class="off" viewBox="0 0 24 24" aria-hidden="true"><path d="${STAR_D}"/></svg><svg class="on" viewBox="0 0 24 24" aria-hidden="true"><path d="${STAR_D}"/></svg>`;
+  // a small ½-star picker: tap a star (its left half for a half star), the same value again clears; arrow keys ±½
+  function starPicker(label, get, set) {
+    const el = h('div', { class: 'rstars sstars', role: 'slider', tabindex: '0', 'aria-label': label, 'aria-valuemin': '0', 'aria-valuemax': '5' });
+    const stars = [0, 1, 2, 3, 4].map(() => { const st = h('span', { class: 'rstar' }); st.innerHTML = STAR_SVG; return st; });
+    el.append(...stars);
+    const paint = v => {
+      stars.forEach((st, i) => st.style.setProperty('--f', `${Math.max(0, Math.min(1, v - i)) * 100}%`));
+      el.setAttribute('aria-valuenow', String(v)); el.setAttribute('aria-valuetext', v ? `${v} out of 5 stars` : 'No rating');
+    };
+    const at = e => { for (let i = 0; i < stars.length; i++) { const b = stars[i].getBoundingClientRect(); if (e.clientX <= b.right || i === stars.length - 1) return e.clientX < b.left + b.width / 2 ? i + 0.5 : i + 1; } return 5; };
+    el.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') paint(at(e)); });
+    el.addEventListener('pointerleave', () => paint(get()));
+    el.addEventListener('click', e => { const v = at(e), nv = v === get() ? 0 : v; set(nv); paint(nv); });
+    el.addEventListener('keydown', e => {
+      let v = get(); const k = e.key;
+      if (k === 'ArrowRight' || k === 'ArrowUp') v += 0.5; else if (k === 'ArrowLeft' || k === 'ArrowDown') v -= 0.5; else if (k === 'Home') v = 0; else if (k === 'End') v = 5; else return;
+      e.preventDefault(); v = Math.max(0, Math.min(5, v)); set(v); paint(v);
+    });
+    paint(get());
+    return el;
+  }
+  function shortRow(x) {
+    const cur = () => rating.shorts[x.key] || { r: 0, l: false };
+    const set = (r, l) => { if (r || l) rating.shorts[x.key] = { r, l }; else delete rating.shorts[x.key]; paintShortsSum(); };
+    const heart = h('button', { type: 'button', class: 'rheart sm', 'aria-pressed': String(!!cur().l), 'aria-label': `Like ${x.title}`, title: 'Like' });
+    heart.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${HEART_D}" fill="currentColor"/></svg>`;
+    heart.onclick = () => { const l = !cur().l; heart.setAttribute('aria-pressed', String(l)); set(cur().r, l); };
+    const meta = [x.director, x.countries].filter(Boolean).join(' · ');
+    return h('div', { class: 'srow' },
+      h('div', { class: 'sinfo' }, x.img ? h('img', { class: 'sthumb', src: x.img, alt: '', loading: 'lazy', decoding: 'async', onerror: e => e.currentTarget.remove() }) : null,
+        h('div', { class: 'stt' }, h('b', { text: x.title }), x.aka ? h('i', { text: x.aka }) : null, meta ? h('span', { text: meta }) : null)),
+      starPicker(`Your rating for ${x.title}`, () => cur().r, v => set(v, cur().l)), heart);
+  }
+  function paintShortsSum() {
+    const el = $('#rShortsSum'), L = rating.f && lineupOf(rating.f); if (!el || !L) return;
+    const rs = L.map(x => rating.shorts[x.key]).filter(Boolean), st = rs.map(v => v.r).filter(Boolean);
+    const avg = st.length ? st.reduce((a, b) => a + b, 0) / st.length : 0;
+    el.textContent = rs.length ? `${rs.length} of ${L.length} rated${avg ? ` · average ${avg.toFixed(1)} ★` : ''}` : 'Each one is optional. Your overall rating above stays on the schedule image.';
+  }
+  function renderShortsRate(f) {
+    const L = lineupOf(f), box = $('#rShorts'), note = $('#rateNote');
+    rateDlg.classList.toggle('has-shorts', !!L);
+    if (!L) {
+      note.textContent = 'Shorts program: give one general rating for the whole program instead of rating each short.';
+      box.hidden = true; box.replaceChildren(); return;
+    }
+    note.replaceChildren('Shorts program: the stars above are your ', h('b', { text: 'overall' }), ' rating for the whole program. Rate each short below too, if you like.');
+    box.replaceChildren(h('h3', { text: `The ${L.length} shorts` }), ...L.map(shortRow), h('p', { class: 'rshorts-sum', id: 'rShortsSum', 'aria-live': 'polite' }));
+    box.hidden = false; paintShortsSum();
+  }
+  // what gets written: every short that has (or had) a rating; cleared ones as zeros, so a merge can't keep an old value
+  function shortsOut(f, cur) {
+    const out = {};
+    for (const k of new Set([...Object.keys(f.shorts || {}), ...Object.keys(cur || {})])) out[k] = cur && cur[k] ? { r: +cur[k].r || 0, l: !!cur[k].l } : { r: 0, l: false };
+    return out;
+  }
+
+  /* ---------- shorts ratings image ----------
+     Shorts programs keep one overall rating on the schedule image. This picture has a rating per short: one column
+     per watched shorts program (X post) or one block per program (wallpaper), same size and header as the schedule. */
+  const progParts = f => { const t = f.title || '', m = /^(.*?):\s*(.+)$/.exec(t); return m ? [m[1], m[2]] : [/qcshorts/i.test(f.section || '') ? 'QCShorts' : f.section || 'Shorts', t]; };
+  const shortsAvg = f => { const s = f.shorts || {}, v = (lineupOf(f) || []).map(x => s[x.key] && s[x.key].r).filter(Boolean); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0; };
+  const progHeadH = (s, lines) => (14 + lines * 26.52 + 22 + 27) * s;
+  // program name, date, overall rating and the average of the shorts; s = scale, lines = max lines for the name
+  function drawProgHead(ctx, x, y, w, f, s, lines, tight) {
+    const [pre, name] = progParts(f), d = dayOf(f.day);
+    ctx.textAlign = 'left';
+    // "QCSHORTS PROGRAM 1 · SUN NOV 15"; in a narrow column a smaller size, then without the date
+    const PRE = pre.toUpperCase(), lab = [...(d ? [`${PRE} · ${d.wd.toUpperCase()} NOV ${d.d}`] : []), PRE];
+    let lt = null;
+    for (const t of lab) { for (const fs of [12.5, 11.5, 10.5]) { setFont(ctx, 800, fs * s, FA, 'normal', fs * 0.17 * s); if (ctx.measureText(t).width <= w) { lt = t; break; } } if (lt) break; }
+    ctx.fillStyle = C.cyan; ctx.fillText(lt || wrapLines(ctx, PRE, w, 1)[0] || '', x, y + 12 * s);
+    const maxH = lines * 26.52 * s, fit = fitLines(ctx, name, w, maxH, [26, 24, 22, 20, 18, 17, 16].map(v => v * s), 800, FA, 'condensed', 1.02);
+    ctx.fillStyle = C.ink; fit.lines.forEach((l, i) => ctx.fillText(l, x, y + 14 * s + fit.size * 0.95 + i * fit.size * 1.02));
+    const cy = y + 14 * s + (tight ? fit.lines.length * fit.size * 1.02 : maxH) + 22 * s, r = +f.rating || 0;
+    setFont(ctx, 800, 10.5 * s, FA, 'normal', 1.6 * s); ctx.fillStyle = C.muted; ctx.fillText('OVERALL', x, cy + 4 * s);
+    let endX = x + ctx.measureText('OVERALL').width + 8 * s;
+    if (r || f.liked) endX = drawStars(ctx, endX, cy, 17 * s, r, f.liked, LB_GREEN, LB_ORANGE);
+    else { ctx.fillStyle = C.faint; ctx.fillText('—', endX, cy + 4 * s); endX += 14 * s; }
+    const avg = shortsAvg(f);
+    if (avg) {
+      setFont(ctx, 600, 14 * s, FM, 'normal', 0); const num = avg.toFixed(1), nw = ctx.measureText(num).width;
+      setFont(ctx, 800, 10.5 * s, FA, 'normal', 1.6 * s); const lw = ctx.measureText('SHORTS AVG').width;
+      const st = 15 * s, ax = x + w - (lw + 8 * s + nw + 4 * s + st);
+      if (ax > endX + 14 * s) {
+        ctx.fillStyle = C.muted; ctx.fillText('SHORTS AVG', ax, cy + 4 * s);
+        setFont(ctx, 600, 14 * s, FM, 'normal', 0); ctx.fillStyle = C.ink; ctx.fillText(num, ax + lw + 8 * s, cy + 5 * s);
+        drawStars(ctx, ax + lw + 12 * s + nw, cy, st, 1, false, LB_GREEN, LB_ORANGE);
+      }
+    }
+    return cy + 27 * s;
+  }
+  // a poster filling (x, y, w, h), centre-cropped; greyed out for a short that isn't rated
+  function drawCover(ctx, im, x, y, w, h, dim) {
+    const iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height; if (!iw || !ih) return;
+    const k = Math.max(w / iw, h / ih), canFilter = 'filter' in ctx;
+    ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+    if (dim && canFilter) ctx.filter = 'grayscale(1) brightness(.5)';
+    ctx.drawImage(im, x + (w - iw * k) / 2, y + (h - ih * k) / 2, iw * k, ih * k);
+    ctx.restore();
+    if (dim && !canFilter) { ctx.fillStyle = 'rgba(10,16,41,.6)'; ctx.fillRect(x, y, w, h); }
+  }
+  // one short: poster on the left when there is one, title (+ other title when there's room), director, then its stars
+  // and heart (or NOT RATED); u = scale
+  function drawShortTile(ctx, x, y, w, th, sh, val, hue, u, im) {
+    const rated = !!(val && (val.r || val.l));
+    ctx.save(); rr(ctx, x, y, w, th, 10 * u); ctx.fillStyle = rated ? '#0f2241' : 'rgba(14,22,56,.7)'; ctx.fill();
+    ctx.clip(); let left = 0;
+    if (im) { left = Math.min(th * 2 / 3, w * 0.42); drawCover(ctx, im, x, y, left, th, !rated); }
+    ctx.restore();
+    ctx.save(); ctx.lineWidth = 2; ctx.strokeStyle = rated ? C.blue : 'rgba(61,155,230,.4)'; rr(ctx, x + 1, y + 1, w - 2, th - 2, 10 * u); ctx.stroke(); ctx.restore();
+    const pad = 10 * u, px = x + left + pad + (left ? 0 : 2 * u), iw = x + w - pad - px;
+    const ss = Math.max(12 * u, Math.min(20 * u, th * 0.2)), dirFs = 12.5 * u, akaFs = 12 * u;
+    let room = th - 2 * pad - ss - 6 * u - dirFs * 1.3;
+    const aka = sh.aka && room >= 44 * u ? sh.aka : '';
+    if (aka) room -= akaFs * 1.3;
+    const fit = fitLines(ctx, sh.title, iw, room, [21, 20, 19, 18, 17, 16, 15, 14, 13, 12].map(v => v * u), 800, FA, 'condensed', 1.04);
+    let by = y + pad + fit.size * 0.86;
+    ctx.textAlign = 'left'; ctx.fillStyle = rated ? C.ink : C.muted;
+    fit.lines.forEach((l, i) => ctx.fillText(l, px, by + i * fit.size * 1.04));
+    by += (fit.lines.length - 1) * fit.size * 1.04;
+    if (aka) { setFont(ctx, 'italic 500', akaFs, FB, 'normal', 0); ctx.fillStyle = C.muted; by += akaFs * 1.3; ctx.fillText(wrapLines(ctx, aka, iw, 1)[0] || '', px, by); }
+    setFont(ctx, 600, dirFs, FB, 'normal', 0); ctx.fillStyle = C.faint; by += dirFs * 1.3;
+    ctx.fillText(wrapLines(ctx, sh.director || '', iw, 1)[0] || '', px, by);
+    const cy = y + th - pad - ss / 2;
+    if (rated) drawStars(ctx, px, cy, ss, +val.r || 0, !!val.l, LB_GREEN, LB_ORANGE);
+    else { setFont(ctx, 800, 10.5 * u, FA, 'normal', 1.2 * u); ctx.fillStyle = C.faint; ctx.fillText('NOT RATED', px, cy + 4 * u); }
+  }
+  // X: one 7:8 picture per program. Logos and handle on top, the program with its overall rating and the average of
+  // its shorts, the shorts two to a row, the planner link and "1/3" at the bottom.
+  const SC78 = { W: 700, H: 800, M: 34 };
+  function drawShortsCard(ctx, f, logo14, logoGT, avIm, label, big, isHandle, idx, total) {
+    const { W, H, M } = SC78, HC = 54;
+    let hx = M;
+    if (logo14) { const lh = 46, lw = logo14.naturalWidth * lh / logo14.naturalHeight; ctx.drawImage(logo14, hx, HC - lh / 2, lw, lh); hx += lw + 18; }
+    if (logoGT) { const gh = 40, gw = logoGT.naturalWidth * gh / logoGT.naturalHeight; ctx.drawImage(logoGT, hx, HC - gh / 2, gw, gh); hx += gw; }
+    if (!logo14 && !logoGT) { setFont(ctx, 900, 30, FA, 'condensed', 0); ctx.fillStyle = C.ink; ctx.fillText('QCINEMA 2026', hx, HC + 11); hx += ctx.measureText('QCINEMA 2026').width; }
+    const AVD = 52, tx = avIm ? W - M - AVD - 12 : W - M, maxT = tx - hx - 20;
+    if (avIm) drawAvatar(ctx, avIm, W - M - AVD, HC - AVD / 2, AVD);
+    ctx.textAlign = 'right';
+    setFont(ctx, 800, 10, FA, 'normal', 2); ctx.fillStyle = C.cyan; ctx.fillText(wrapLines(ctx, label, maxT, 1)[0] || '', tx, HC - 8);
+    let bs = 24; setFont(ctx, 800, bs, FA, 'normal', 0);
+    while (bs > 13 && ctx.measureText(big).width > maxT) { bs -= 1; setFont(ctx, 800, bs, FA, 'normal', 0); }
+    ctx.fillStyle = isHandle ? C.sun : C.ink; ctx.fillText(wrapLines(ctx, big, maxT, 1)[0] || '', tx, HC + 18);
+    ctx.textAlign = 'left';
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(M, 102.5); ctx.lineTo(W - M, 102.5); ctx.stroke();
+    const top = 122, s = 1.25;
+    const y0 = drawProgHead(ctx, M, top, W - 2 * M, f, s, 2, true);
+    const L = lineupOf(f), cols = 2, rows = Math.ceil(L.length / cols), G = 12, y1 = H - 50;
+    const tw = (W - 2 * M - G) / cols, th = Math.min(215, (y1 - y0 - G * (rows - 1)) / rows);
+    const yt = y0 + Math.max(0, (y1 - y0 - rows * th - (rows - 1) * G) / 2), u = Math.max(0.9, Math.min(1.3, th / 110, tw / 260));
+    L.forEach((sh, i) => {
+      const r = Math.floor(i / cols), lone = r === rows - 1 && L.length % cols === 1;   // an odd last short sits in the middle
+      drawShortTile(ctx, lone ? (W - tw) / 2 : M + (i % cols) * (tw + G), yt + r * (th + G), tw, th, sh, (f.shorts || {})[sh.key], hueFor(f), u, srPosters.get(sh.img));
+    });
+    drawSiteLink(ctx, W / 2, H - 20, 'center', 13);
+    if (total > 1) { setFont(ctx, 600, 12, FM, 'normal', 0); ctx.fillStyle = C.faint; ctx.textAlign = 'right'; ctx.fillText(`${idx + 1}/${total}`, W - M, H - 20); ctx.textAlign = 'left'; }
+  }
+  // wallpaper row: title and director on the left, stars + heart in a column on the right (or NOT RATED)
+  function drawShortRow(ctx, x, y, w, rh, sh, val, hue, im) {
+    const rated = !!(val && (val.r || val.l)), u = rh / 100;
+    ctx.save(); rr(ctx, x, y, w, rh, 12 * u); ctx.fillStyle = rated ? '#0f2241' : 'rgba(14,22,56,.7)'; ctx.fill();
+    ctx.clip(); let left = 0;
+    if (im) { left = rh * 2 / 3; drawCover(ctx, im, x, y, left, rh, !rated); }
+    ctx.restore();
+    ctx.save(); ctx.lineWidth = 2; ctx.strokeStyle = rated ? C.blue : 'rgba(61,155,230,.4)'; rr(ctx, x + 1, y + 1, w - 2, rh - 2, 12 * u); ctx.stroke(); ctx.restore();
+    const pad = 16 * u, px = x + left + pad, ss = Math.min(36, rh * 0.3), sx = x + w - pad - 5.88 * ss;   // room for 5 stars + heart
+    const iw = sx - 18 * u - px, tfs = rh * 0.3, dfs = rh * 0.2;
+    let fz = tfs; setFont(ctx, 800, fz, FA, 'condensed', 0);
+    while (fz > tfs * 0.72 && ctx.measureText(sh.title).width > iw) { fz -= 1; setFont(ctx, 800, fz, FA, 'condensed', 0); }
+    const by = y + (rh - (fz + 7 * u + dfs)) / 2;
+    ctx.textAlign = 'left'; ctx.fillStyle = rated ? C.ink : C.muted; ctx.fillText(wrapLines(ctx, sh.title, iw, 1)[0] || '', px, by + fz * 0.85);
+    setFont(ctx, 600, dfs, FB, 'normal', 0); ctx.fillStyle = C.faint; ctx.fillText(wrapLines(ctx, sh.director || '', iw, 1)[0] || '', px, by + fz + 7 * u + dfs * 0.85);
+    const cy = y + rh / 2;
+    if (rated) drawStars(ctx, sx, cy, ss, +val.r || 0, !!val.l, LB_GREEN, LB_ORANGE);
+    else { setFont(ctx, 800, 13 * u, FA, 'normal', 1.5 * u); ctx.fillStyle = C.faint; ctx.fillText('NOT RATED', sx, cy + 4.5 * u); }
+  }
+  // wallpaper: programs stacked, one row per short; two columns of programs when one column would get cramped
+  function drawShortsPhone(ctx, W, H, top, progs) {
+    const { M, BOTTOM } = PH, CG = 26, avail = H - BOTTOM - 30 - top;
+    const kOf = f => lineupOf(f).length, tot = progs.reduce((a, f) => a + kOf(f), 0);
+    const plan = (cols, s, G, BG) => {
+      let groups = [progs];
+      if (cols === 2) { let acc = 0, i = 0; for (; i < progs.length - 1; i++) { if (acc && acc + kOf(progs[i]) / 2 > tot / 2) break; acc += kOf(progs[i]); } groups = [progs.slice(0, i), progs.slice(i)]; }
+      const hh = progHeadH(s, 1);
+      const rh = Math.min(...groups.map(g => { const k = g.reduce((a, f) => a + kOf(f), 0); return (avail - g.length * hh - (g.length - 1) * BG - (k - g.length) * G) / k; }));
+      return { cols, s, G, BG, hh, groups, rh: Math.min(116, rh) };
+    };
+    let L = plan(1, 1.55, 12, 34);
+    if (L.rh < 84 && progs.length > 1) L = plan(2, 1.15, 10, 28);
+    if (L.rh < 60) L = plan(L.cols, 0.95, 6, 20);
+    const colW = (W - 2 * M - CG * (L.cols - 1)) / L.cols;
+    const hOf = g => g.length * L.hh + (g.length - 1) * L.BG + g.reduce((a, f) => a + kOf(f) * (L.rh + L.G) - L.G, 0);
+    const y0 = top + Math.max(0, (avail - Math.max(...L.groups.map(hOf))) / 3);
+    L.groups.forEach((g, gi) => {
+      const x = M + gi * (colW + CG); let y = y0;
+      for (const f of g) {
+        drawProgHead(ctx, x, y, colW, f, L.s, 1); y += L.hh;
+        for (const sh of lineupOf(f)) { drawShortRow(ctx, x, y, colW, L.rh, sh, (f.shorts || {})[sh.key], hueFor(f), srPosters.get(sh.img)); y += L.rh + L.G; }
+        y += L.BG - L.G;
+      }
+    });
+  }
+  let srTimer = null, srGen = 0, srItems = [], srKey = '', srPosters = new Map();
+  function scheduleShorts() { clearTimeout(srTimer); srTimer = setTimeout(buildShorts, 700); }
+  async function buildShorts() {
+    const my = ++srGen, sec = $('#shortsX');
+    sec.hidden = !films.some(f => !f.cancelled && lineupOf(f));
+    const progs = films.filter(f => !f.cancelled && f.watched && lineupOf(f) && shortsRated(f).length)
+      .sort((a, b) => (a.day || '').localeCompare(b.day || '') || cmpFilm(a, b));
+    const hdl = viewHandle(), av = avatarOf(viewing);
+    const key = JSON.stringify([shFmt, progs.map(f => [f.id, f.title, f.day, f.time, f.rating, f.liked, f.shorts, lineupOf(f).length]), hdl, av.length, av.slice(-48)]);
+    const gal = $('#srGal'), ph = $('#srPh'), cap = $('#srCap'), save = $('#srSave');
+    if (key === srKey && (srItems.length || !progs.length)) return;
+    if (!progs.length) {
+      srKey = key; setSrItems([]); gal.hidden = true; gal.replaceChildren(); ph.hidden = false; ph.classList.toggle('tall', shFmt === 'phone'); ph.classList.toggle('r78', shFmt !== 'phone'); cap.textContent = ''; save.disabled = true;
+      ph.textContent = !loadedFilms ? 'Building your images…' : 'After you watch a shorts program, rate its shorts from its card (“Rate each of the shorts”). They show up here.';
+      return;
+    }
+    const [logo14, logoGT] = await Promise.all([loadImg('logos/qc14.png'), loadImg('logos/genreteurs.png')]);
+    const avIm = av ? await loadImg(av) : null;
+    const pims = [...new Set(progs.flatMap(f => lineupOf(f).map(x => x.img).filter(Boolean)))];
+    const posters = new Map(await Promise.all(pims.map(async src => [src, await loadImg(src)])));
+    try { await Promise.all([document.fonts.load(`900 58px ${FA}`), document.fonts.load(`800 20px ${FA}`), document.fonts.load(`600 20px ${FB}`), document.fonts.load(`600 14px ${FM}`)]); } catch (_) {}
+    if (my !== srGen) return;
+    srPosters = posters;
+    const phone = shFmt === 'phone', label = hdl ? 'SHORTS RATED BY' : 'QCINEMA 2026 · SHORTS', big = hdl || 'MY SHORTS RATINGS';
+    const canvasOf = (W, H, S, ra, rb) => {
+      const cv = document.createElement('canvas'); cv.width = W * S; cv.height = H * S;
+      const ctx = cv.getContext('2d'); ctx.scale(S, S); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = C.night; ctx.fillRect(0, 0, W, H);
+      let g = ctx.createRadialGradient(W, 0, 0, W, 0, ra); g.addColorStop(0, 'rgba(0,224,84,.13)'); g.addColorStop(1, 'rgba(0,224,84,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      g = ctx.createRadialGradient(0, H, 0, 0, H, rb); g.addColorStop(0, 'rgba(20,178,220,.14)'); g.addColorStop(1, 'rgba(20,178,220,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      return { cv, ctx };
+    };
+    const items = [];
+    if (phone) {
+      const { cv, ctx } = canvasOf(PH.W, PH.H, 1, 820, 900);
+      const top = drawPhoneHeader(ctx, PH.W, logo14, logoGT, avIm, label, big, !!hdl); drawShortsPhone(ctx, PH.W, PH.H, top, progs); drawSiteLink(ctx, PH.W / 2, PH.H - PH.BOTTOM + 58, 'center', 26);
+      const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+      if (my !== srGen || !blob) return;
+      items.push({ blob, name: 'qcinema-2026-shorts-wallpaper.png', label: 'Wallpaper', w: cv.width, h: cv.height });
+    } else {
+      for (let i = 0; i < progs.length; i++) {
+        const { cv, ctx } = canvasOf(SC78.W, SC78.H, 2, 420, 460);
+        drawShortsCard(ctx, progs[i], logo14, logoGT, avIm, label, big, !!hdl, i, progs.length);
+        const blob = await new Promise(res => cv.toBlob(res, 'image/jpeg', 0.93));
+        if (my !== srGen || !blob) return;
+        items.push({ blob, name: `qcinema-2026-shorts-${i + 1}-of-${progs.length}.jpg`, label: `${i + 1}. ${progParts(progs[i])[0]}`, w: cv.width, h: cv.height });
+      }
+    }
+    srKey = key; setSrItems(items);
+    gal.replaceChildren(...items.map(it => h('figure', { class: 'sr-item' },
+      h('img', { src: it.url, alt: `Your shorts ratings: ${it.label}` }),
+      h('figcaption', null, h('span', { text: it.label }), h('button', { type: 'button', class: 'lnk', onclick: () => saveSr([it]) }, 'Save')))));
+    gal.classList.toggle('tall', phone); gal.hidden = false; ph.hidden = true;
+    cap.textContent = phone ? `${items[0].w} × ${items[0].h} px · PNG`
+      : `${items.length} ${items.length === 1 ? 'picture' : 'pictures'} · ${items[0].w} × ${items[0].h} px each (7:8) · JPG${items.length > 4 ? ' · X takes up to 4 per post' : ''}`;
+    save.textContent = items.length > 1 ? `Save all ${items.length}` : 'Save image'; save.disabled = false;
+  }
+  function setSrItems(items) { for (const it of srItems) URL.revokeObjectURL(it.url); for (const it of items) it.url = URL.createObjectURL(it.blob); srItems = items; }
+  async function saveSr(list) {
+    const hint = $('#srHint'); hint.textContent = '';
+    // phones (GitHub copy): one share sheet with every picture, ready to go into one X post
+    if (typeof offerFile === 'function' && list.length > 1 && matchMedia('(pointer: coarse)').matches && navigator.canShare) {
+      try { const files = list.map(it => new File([it.blob], it.name, { type: it.blob.type })); if (navigator.canShare({ files })) { await navigator.share({ files }); return; } }
+      catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    for (const it of list) {
+      const r = await saveOut(it.blob, it.name, list.length > 1 ? `Saved ${it.name}` : 'Image saved');
+      if (r === 'cancelled') return;
+      if (r === 'failed') { hint.textContent = "Couldn't save the image here. Right-click or long-press it to save it instead."; return; }
+    }
+  }
+  $('#srSave').onclick = () => { if (srItems.length) saveSr(srItems); };
   const shMaybeEl = $('#shMaybe'), shHandleEl = $('#shHandle');
   shMaybeEl.checked = shMaybe; shHandleEl.disabled = true;
   const fmtEl = document.querySelector(`input[name="shfmt"][value="${shFmt}"]`); if (fmtEl) fmtEl.checked = true;
