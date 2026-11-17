@@ -541,7 +541,7 @@ legend{padding:0;margin-bottom:6px}
 <section class="wrap share" id="share" aria-labelledby="shareTitle">
   <div class="share-copy">
     <h2 id="shareTitle">Export as Image</h2>
-    <p>Every day you're going on one picture: a 16:9 post for X, or an iPhone lock-screen wallpaper that leaves the top clear for the clock. Your handle and profile picture go in the header, a link to the planner goes at the bottom, and 🎫 or 💵 marks your ticket status. Shorts programs show your overall rating here; your rating for each short gets its own image below. It updates whenever the schedule above changes.</p>
+    <p>Every day you're going on one picture: a 16:9 post for X, or an iPhone lock-screen wallpaper that leaves the top clear for the clock. Your handle and profile picture go in the header, a link to the planner goes at the bottom, and 🎫 or 💵 marks your ticket status. Once you rate films, the average of your star ratings and how many you've hearted go at the bottom too. Shorts programs show your overall rating here; your rating for each short gets its own image below. It updates whenever the schedule above changes.</p>
     <fieldset><legend>Size</legend><div class="opts">
       <label><input type="radio" name="shfmt" value="x"><span>X post · 3200 × 1800</span></label>
       <label><input type="radio" name="shfmt" value="phone"><span>iPhone wallpaper · 1290 × 2796</span></label>
@@ -1965,6 +1965,27 @@ legend{padding:0;margin-bottom:6px}
     setFont(ctx, 600, size, FB, 'normal', 0); ctx.fillStyle = C.muted; ctx.fillText(pre, x0, y);
     setFont(ctx, 700, size, FB, 'normal', 0); ctx.fillStyle = C.cyan; ctx.fillText(SITE_LINK, x0 + pw, y);
   }
+  // "Average ★: 3.94 | 1 ♥": the star and heart drawn in the same green and orange as the ratings on the tiles.
+  // avg 0 leaves out the average, likes 0 leaves out the hearts.
+  function drawAvgLine(ctx, avg, likes, x, y, align, size) {
+    const st = size * 1.05, sep = ' | ', num = avg ? `: ${avg.toFixed(2)}` : '', lk = likes ? `${likes} ` : '';
+    setFont(ctx, 600, size, FB, 'normal', 0); const pw = avg ? ctx.measureText('Average ').width : 0, sw = avg && likes ? ctx.measureText(sep).width : 0;
+    setFont(ctx, 700, size, FB, 'normal', 0); const nw = avg ? ctx.measureText(num).width : 0, lw = likes ? ctx.measureText(lk).width : 0;
+    const aw = avg ? pw + st * 0.92 + nw : 0, tw = aw + sw + (likes ? lw + st : 0);
+    let cx = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
+    ctx.textAlign = 'left';
+    if (avg) {
+      setFont(ctx, 600, size, FB, 'normal', 0); ctx.fillStyle = C.muted; ctx.fillText('Average ', cx, y);
+      drawStars(ctx, cx + pw, y - size * 0.36, st, 1, false, LB_GREEN, LB_ORANGE);
+      setFont(ctx, 700, size, FB, 'normal', 0); ctx.fillStyle = C.ink; ctx.fillText(num, cx + pw + st * 0.92, y);
+      cx += aw;
+    }
+    if (sw) { setFont(ctx, 600, size, FB, 'normal', 0); ctx.fillStyle = C.faint; ctx.fillText(sep, cx, y); cx += sw; }
+    if (likes) {
+      setFont(ctx, 700, size, FB, 'normal', 0); ctx.fillStyle = C.ink; ctx.fillText(lk, cx, y);
+      drawStars(ctx, cx + lw, y - size * 0.36, st, 0, true, LB_GREEN, LB_ORANGE);
+    }
+  }
   function scheduleShare() { renderShareFilter(); clearTimeout(shareTimer); shareTimer = setTimeout(buildShare, 500); scheduleSheet(); scheduleShorts(); }
   async function buildShare() {
     const my = ++shareGen;
@@ -2047,6 +2068,12 @@ legend{padding:0;margin-bottom:6px}
     }
 
     if (phone) drawSiteLink(ctx, W / 2, H - PH.BOTTOM + 58, 'center', 26);
+    const onPic = list.flatMap(r => r.items).filter(f => f.watched), rated = onPic.filter(f => +f.rating > 0), likes = onPic.filter(f => f.liked).length;
+    if (rated.length || likes) {
+      const avg = rated.length ? rated.reduce((a, f) => a + +f.rating, 0) / rated.length : 0;
+      if (phone) drawAvgLine(ctx, avg, likes, W / 2, H - PH.BOTTOM + 25, 'center', 24);
+      else drawAvgLine(ctx, avg, likes, M, H - 16, 'left', 17);
+    }
     const blob = await new Promise(res => phone ? cv.toBlob(res, 'image/png') : cv.toBlob(res, 'image/jpeg', 0.95));   // X post: high-quality JPEG (a 3200 × 1800 PNG runs past X's 5 MB photo limit)
     if (my !== shareGen || !blob) return;
     shareKey = key; shareBlob = blob;
