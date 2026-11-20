@@ -2369,7 +2369,7 @@ legend{padding:0;margin-bottom:6px}
   const EYE_STK = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.6" fill="#00c030" stroke="#071433" stroke-width="1.4"/><path d="M4.6 12c1.9-3 4.4-4.6 7.4-4.6s5.5 1.6 7.4 4.6c-1.9 3-4.4 4.6-7.4 4.6S6.5 15 4.6 12z" fill="none" stroke="#071433" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.3" fill="#071433"/></svg>';
   const starText = r => '★'.repeat(Math.floor(r)) + (r % 1 ? '½' : '');
   const lineupOf = f => (f && f.filmId && CAT.shorts.get(f.filmId)) || null;   // the shorts in a shorts program
-  const isShorts = f => !!lineupOf(f) || /qcshorts/i.test(f.section || '') || /^qcshorts/i.test(f.title || '');   // shorts programs: an overall rating (+ one per short)
+  const isShorts = f => !!lineupOf(f) || /^qcshorts/i.test(f.title || '');   // shorts programs: an overall rating (+ one per short)
   const shortsRated = f => { const s = f.shorts || {}; return (lineupOf(f) || []).filter(x => s[x.key]); };
   // Philippine time (UTC+8, no daylight saving) as minutes; a screening has ended once its end time has passed.
   const phNowMin = () => Math.floor((Date.now() + 8 * 3600000) / 60000);
