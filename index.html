@@ -588,11 +588,12 @@ legend{padding:0;margin-bottom:6px}
 <section class="wrap share stats" id="stats" aria-labelledby="statsTitle">
   <div class="share-copy">
     <h2 id="statsTitle">Festival stats</h2>
-    <p>Your QCinema 2026 in numbers: films watched, talks attended, time in the cinema, your average rating and hearts, shorts rated, what you spent, a breakdown by festival section and your top-rated films. Money: each badge screening counts as ₱200, a ticket as ₱201 at the cinema or ₱251 online on eTix (set it per film under Ticket), and free screenings as ₱0.</p>
+    <p>Your QCinema 2026 in numbers: films watched, talks attended, time in the cinema, your average rating and hearts, shorts watched, what you spent, a breakdown by festival section, where you watched and your top-rated films. Switch off anything you’d rather not share under Show. Money: each badge screening counts as ₱200, a ticket as ₱201 at the cinema or ₱251 online on eTix (set it per film under Ticket), and free screenings as ₱0.</p>
     <fieldset><legend>Size</legend><div class="opts">
       <label><input type="radio" name="stfmt" value="ig"><span>Instagram story · 1080 × 1920</span></label>
       <label><input type="radio" name="stfmt" value="x"><span>X post · 3200 × 1800</span></label>
     </div></fieldset>
+    <fieldset><legend>Show</legend><div class="opts" id="stShow"></div></fieldset>
     <label class="chk"><input type="checkbox" id="stOutside"> Include Outside QCinema films</label>
     <button type="button" class="add" id="stSave" disabled>Save image</button>
     <p class="hint" id="stHint" role="status"></p>
@@ -2799,6 +2800,11 @@ legend{padding:0;margin-bottom:6px}
   const peso = n => '₱' + Math.round(n).toLocaleString('en-US');
   const picSrc = id => typeof srcOf === 'function' ? srcOf(id) : typeof imgSrc === 'function' ? imgSrc(id) : '';   // artifact / GitHub copy
   let stOutside = true; try { stOutside = localStorage.getItem('qc-st-outside') !== '0'; } catch (_) {}
+  // what goes on the picture; switched-off keys are remembered per browser (qc-st-hide)
+  const ST_OPTS = [['films', 'Films watched'], ['time', 'Time in the cinema'], ['avg', 'Average rating'], ['shorts', 'Shorts watched'], ['spent', 'Spent'],
+    ['badge', 'Festival badge'], ['sections', 'By section'], ['places', 'Where I watched'], ['top', 'Top rated']];
+  let stHide = new Set(); try { const v = JSON.parse(localStorage.getItem('qc-st-hide') || '[]'); if (Array.isArray(v)) stHide = new Set(v); } catch (_) {}
+  const stOn = k => !stHide.has(k);
   function statsData() {
     const live = films.filter(f => !f.cancelled), watched = live.filter(f => f.watched);
     const fest = watched.filter(f => f.kind !== 'outside' && f.kind !== 'talk'), outside = stOutside ? watched.filter(f => f.kind === 'outside') : [];
@@ -2825,23 +2831,39 @@ legend{padding:0;margin-bottom:6px}
     const sec = new Map();
     for (const f of fest) { const k = f.section || 'Other'; const o = sec.get(k) || { n: 0, sum: 0, r: 0 }; o.n++; if (+f.rating) { o.sum += +f.rating; o.r++; } sec.set(k, o); }
     const sections = [...sec].map(([name, o]) => ({ name, n: o.n, avg: o.r ? o.sum / o.r : 0 })).sort((a, b) => b.n - a.n || b.avg - a.avg || a.name.localeCompare(b.name));
+    // where: the cinema building of each watched screening ("Cinema 12 · Gateway 2 Cineplex 18" -> "Gateway 2 Cineplex 18")
+    const PLACE_SHORT = { 'Quezon City M.I.C.E Center': 'QC M.I.C.E Center', 'Ayala Malls TriNoma': 'TriNoma' };
+    const placeOf = f => { const v = (f.venue || '').trim(), m = /^Cinema\s*\d+\s*[·,]\s*(.+)$/i.exec(v), k = (m ? m[1] : v).trim(); return PLACE_SHORT[k] || k || 'Somewhere else'; };
+    const pl = new Map(); for (const f of seen) { const k = placeOf(f); pl.set(k, (pl.get(k) || 0) + 1); }
+    const places = [...pl].map(([name, n]) => ({ name, n })).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
     const top = rated.slice().sort((a, b) => b.rating - a.rating || (b.liked ? 1 : 0) - (a.liked ? 1 : 0) || (a.day || '').localeCompare(b.day || '') || cmpFilm(a, b));
     return { fest: fest.length - progs + shorts, outside: outside.length, talks, mins: seen.reduce((a, f) => a + minsOf(f), 0), avg, rated: rated.length, hearts: seen.filter(f => f.liked).length,
       shorts, progs, shortAvg: sN ? sSum / sN : 0, badge, badgeSeen, cinema, online, free, spent: badge * PRICE.badge + cinema * PRICE.cinema + online * PRICE.online,
-      days: days.size, busiest, sections, top };
+      days: days.size, busiest, sections, places, top };
   }
   function statTiles(d) {
     const dd = d.busiest && dayOf(d.busiest[0]), h = Math.floor(d.mins / 60), m = d.mins % 60;
-    const filmsSub = [d.outside ? `Incl. ${d.outside} outside QCinema` : '', d.talks ? `Attended ${d.talks} QCinema ${d.talks === 1 ? 'talk' : 'talks'}` : ''].filter(Boolean);
+    const filmsSub = [d.outside ? `Incl. ${d.outside} outside QCinema` : '', d.talks ? `Attended ${d.talks} Industry ${d.talks === 1 ? 'talk' : 'talks'}` : ''].filter(Boolean);
     const spentParts = [d.badge ? `${d.badge} badge` : '', d.cinema ? `${d.cinema} at the cinema` : '', d.online ? `${d.online} on eTix` : '', d.free ? `${d.free} free` : ''].filter(Boolean);
-    return [
-      { label: 'FILMS WATCHED', value: String(d.fest + d.outside), sub: filmsSub.length ? filmsSub : d.days ? `Over ${d.days} ${d.days === 1 ? 'day' : 'days'}` : '', bg: SB.cyan },
-      { label: 'IN THE CINEMA', value: d.mins ? `${h}h ${String(m).padStart(2, '0')}m` : '0h', sub: dd ? `Busiest: ${dd.wd} Nov ${dd.d} (${d.busiest[1]})` : '', bg: SB.pink },
-      { label: 'AVERAGE RATING', value: d.avg ? d.avg.toFixed(2) : '–', star: !!d.avg, sub: [`${d.rated} rated`, d.hearts ? `${d.hearts} hearted` : ''].filter(Boolean).join(' · '), bg: SB.blue, light: true },
-      { label: 'SHORTS WATCHED', value: String(d.shorts), sub: d.progs ? `${d.progs} ${d.progs === 1 ? 'program' : 'programs'}${d.shortAvg ? ` · avg ${d.shortAvg.toFixed(1)} ★` : ''}` : 'None yet', bg: SB.yellow },
-      { label: 'SPENT', value: peso(d.spent), parts: spentParts.length ? spentParts : ['Nothing paid'], bg: SB.cyan },
-      { label: 'FESTIVAL BADGE', value: `${d.badge}/${BADGE_MAX}`, sub: d.badge ? `${d.badgeSeen} watched` : 'No badge screenings', bg: SB.pink },
+    const all = [
+      { key: 'films', label: 'FILMS WATCHED', value: String(d.fest + d.outside), sub: filmsSub.length ? filmsSub : d.days ? `Over ${d.days} ${d.days === 1 ? 'day' : 'days'}` : '' },
+      { key: 'time', label: 'IN THE CINEMA', value: d.mins ? `${h}h ${String(m).padStart(2, '0')}m` : '0h', sub: dd ? `Busiest: ${dd.wd} Nov ${dd.d} (${d.busiest[1]})` : '' },
+      { key: 'avg', label: 'AVERAGE RATING', value: d.avg ? d.avg.toFixed(2) : '–', star: !!d.avg, sub: [`${d.rated} rated`, d.hearts ? `${d.hearts} hearted` : ''].filter(Boolean).join(' · ') },
+      { key: 'shorts', label: 'SHORTS WATCHED', value: String(d.shorts), sub: `${d.progs} ${d.progs === 1 ? 'program' : 'programs'}${d.shortAvg ? ` · avg ${d.shortAvg.toFixed(1)} ★` : ''}` },
+      { key: 'spent', label: 'SPENT', value: peso(d.spent), parts: spentParts.length ? spentParts : ['Nothing paid'] },
+      { key: 'badge', label: 'FESTIVAL BADGE', value: `${d.badge}/${BADGE_MAX}`, sub: `${d.badgeSeen} watched` },
     ];
+    // left out: switched off, or nothing to show (no badge screenings, no shorts). The average is always the blue tile.
+    const cyc = [SB.cyan, SB.pink, SB.yellow]; let ci = 0;
+    return all.filter(t => stOn(t.key) && !(t.key === 'badge' && !d.badge) && !(t.key === 'shorts' && !d.shorts))
+      .map(t => t.key === 'avg' ? { ...t, bg: SB.blue, light: true } : { ...t, bg: cyc[ci++ % 3] });
+  }
+  // tiles in rows of up to three (4 = 2 + 2, 5 = 3 + 2); each row shares the full width; returns the bottom
+  function drawTileGrid(ctx, x, y, w, th, G, tiles, u, lines) {
+    const n = tiles.length, rows = n <= 3 ? [n] : n === 4 ? [2, 2] : [3, n - 3];
+    let k = 0;
+    rows.forEach((c, r) => { const tw = (w - G * (c - 1)) / c; for (let i = 0; i < c; i++, k++) drawStatTile(ctx, x + i * (tw + G), y + r * (th + G), tw, th, tiles[k], u, lines); });
+    return y + rows.length * th + (rows.length - 1) * G;
   }
   // one solid-colour tile: label, big value (+ a green star for the average), up to `lines` lines underneath
   function drawStatTile(ctx, x, y, w, hh, t, u, lines) {
@@ -2864,26 +2886,42 @@ legend{padding:0;margin-bottom:6px}
     ctx.fillStyle = ink; ctx.fillText(t.value, x + pad, vy);
     if (st) drawStars(ctx, x + pad + ctx.measureText(t.value).width + vs * 0.12, vy - vs * 0.34, vs * st, 1, false, LB_GREEN, LB_ORANGE);
   }
-  // "BY SECTION": one bar per festival section (films watched), with the average rating there; the rest folds into "Other"
-  function drawSections(ctx, x, y, w, rh, maxRows, list, u) {
+  // bar lists: "BY SECTION" (films watched + average rating per festival section) and "WHERE I WATCHED" (screenings
+  // per cinema + share). More rows than maxRows fold into "Other …". compact: the name sits above its bar.
+  function drawBars(ctx, x, y, w, rh, maxRows, list, u, kind, compact) {
+    const total = list.reduce((a, s) => a + s.n, 0);
     let rows = list;
     if (list.length > maxRows) {
       const rest = list.slice(maxRows - 1), rr2 = rest.filter(s => s.avg);
-      rows = [...list.slice(0, maxRows - 1), { name: `Other sections (${rest.length})`, n: rest.reduce((a, s) => a + s.n, 0), avg: rr2.length ? rr2.reduce((a, s) => a + s.avg * s.n, 0) / rr2.reduce((a, s) => a + s.n, 0) : 0, other: true }];
+      rows = [...list.slice(0, maxRows - 1), { name: `${kind === 'places' ? 'Other cinemas' : 'Other sections'} (${rest.length})`, n: rest.reduce((a, s) => a + s.n, 0),
+        avg: rr2.length ? rr2.reduce((a, s) => a + s.avg * s.n, 0) / rr2.reduce((a, s) => a + s.n, 0) : 0, other: true }];
     }
-    const maxN = Math.max(1, ...rows.map(s => s.n)), nameW = w * 0.44, numW = 118 * u, barX = x + nameW + 12 * u, barW = w - nameW - numW - 24 * u;
+    const maxN = Math.max(1, ...rows.map(s => s.n)), PL = [SB.cyan, SB.pink, SB.yellow, '#3d9be6'];
+    const colorOf = (s, i) => s.other ? C.faint : kind === 'places' ? PL[i % PL.length] : (HUEC[HUES[s.name]] || HUEC.cyan)[0];
+    const right = (s, rx, cy) => {   // average with a green star, or share of screenings
+      setFont(ctx, 600, 19 * u, FM, 'normal', 0); ctx.fillStyle = C.muted;
+      if (kind === 'places') { const t = `${Math.round(s.n / total * 100)}%`, tw2 = ctx.measureText(t).width; ctx.fillText(t, rx - tw2, cy); return tw2; }
+      if (!s.avg) return 0;
+      const t = s.avg.toFixed(1), tw2 = ctx.measureText(t).width, ss = 18 * u;
+      ctx.fillText(t, rx - tw2, cy); drawStars(ctx, rx - tw2 - ss - 4 * u, cy - 7 * u, ss, 1, false, LB_GREEN, LB_ORANGE); return tw2 + ss + 4 * u;
+    };
     rows.forEach((s, i) => {
-      const cy = y + i * rh + rh / 2;
-      setFont(ctx, 700, 22 * u, FB, 'normal', 0); ctx.fillStyle = C.ink; ctx.textAlign = 'left';
+      ctx.textAlign = 'left';
+      if (compact) {
+        const ty = y + i * rh + 22 * u, by = y + i * rh + 32 * u, bh = 10 * u;
+        const rw = right(s, x + w, ty);
+        setFont(ctx, 800, 22 * u, FA, 'normal', 0); ctx.fillStyle = C.ink; const nw = ctx.measureText(String(s.n)).width; ctx.fillText(String(s.n), x + w - rw - 12 * u - nw, ty);
+        setFont(ctx, 700, 20 * u, FB, 'normal', 0); ctx.fillStyle = C.ink; ctx.fillText(wrapLines(ctx, s.name, w - rw - nw - 28 * u, 1)[0] || '', x, ty);
+        ctx.fillStyle = colorOf(s, i); rr(ctx, x, by, Math.max(bh, w * s.n / maxN), bh, bh / 2); ctx.fill();
+        return;
+      }
+      const cy = y + i * rh + rh / 2, nameW = w * 0.44, numW = 118 * u, barX = x + nameW + 12 * u, barW = w - nameW - numW - 24 * u;
+      setFont(ctx, 700, 22 * u, FB, 'normal', 0); ctx.fillStyle = C.ink;
       ctx.fillText(wrapLines(ctx, s.name, nameW, 1)[0] || '', x, cy + 8 * u);
       const bh = Math.min(20 * u, rh * 0.5), bw = Math.max(bh, barW * s.n / maxN);
-      ctx.fillStyle = s.other ? C.faint : (HUEC[HUES[s.name]] || HUEC.cyan)[0]; rr(ctx, barX, cy - bh / 2, bw, bh, bh / 2); ctx.fill();
+      ctx.fillStyle = colorOf(s, i); rr(ctx, barX, cy - bh / 2, bw, bh, bh / 2); ctx.fill();
       setFont(ctx, 800, 24 * u, FA, 'normal', 0); ctx.fillStyle = C.ink; ctx.fillText(String(s.n), barX + bw + 10 * u, cy + 8 * u);
-      if (s.avg) {
-        setFont(ctx, 600, 19 * u, FM, 'normal', 0); const t = s.avg.toFixed(1), tw2 = ctx.measureText(t).width, ss = 18 * u;
-        ctx.fillStyle = C.muted; ctx.fillText(t, x + w - tw2, cy + 7 * u);
-        drawStars(ctx, x + w - tw2 - ss - 4 * u, cy, ss, 1, false, LB_GREEN, LB_ORANGE);
-      }
+      right(s, x + w, cy + 7 * u);
     });
     return y + rows.length * rh;
   }
@@ -2913,23 +2951,44 @@ legend{padding:0;margin-bottom:6px}
     while (bs > 32 && ctx.measureText(big).width > W - M - tx) { bs -= 2; setFont(ctx, 800, bs, FA, 'normal', 0); }
     ctx.fillStyle = hdl ? SB.yellow : C.ink; ctx.fillText(wrapLines(ctx, big, W - M - tx, 1)[0] || '', tx, 344);
     setFont(ctx, 600, 24, FB, 'normal', 0); ctx.fillStyle = C.muted; ctx.fillText(`Nov 13–22, 2026 · Quezon City${d.days ? ` · ${d.days} ${d.days === 1 ? 'day' : 'days'} at the festival` : ''}`, tx, 384);
-    // six tiles, three per row
-    const G = 18, tw = (W - 2 * M - 2 * G) / 3, th = 192, y0 = 414;
-    statTiles(d).forEach((t, i) => drawStatTile(ctx, M + (i % 3) * (tw + G), y0 + Math.floor(i / 3) * (th + G), tw, th, t, 0.9, 2));
-    let y = y0 + 2 * th + G + 54;
-    if (d.sections.length) { blockLabel(ctx, 'BY SECTION', M, y, 25); y = drawSections(ctx, M, y + 14, W - 2 * M, 38, 7, d.sections, 1) + 50; }
-    blockLabel(ctx, d.top.length ? 'TOP RATED' : 'TOP RATED · RATE A FILM TO FILL THIS', M, y, 25);
-    const n = Math.max(0, Math.min(3, Math.floor((1548 - y - 14) / 100)));
-    d.top.slice(0, n).forEach((f, i) => drawTopRow(ctx, M, y + 14 + i * 104, W - 2 * M, 98, i, f, ims.get(f.id), 0.94));
+    let y = 414;
+    const tiles = statTiles(d);
+    if (tiles.length) y = drawTileGrid(ctx, M, y, W - 2 * M, 192, 18, tiles, 0.9, 2) + 54; else y += 40;
+    // by section / where I watched: side by side when both show
+    const showS = stOn('sections') && d.sections.length, showP = stOn('places') && d.places.length;
+    if (showS || showP) {
+      const both = showS && showP, G2 = 44, cw = both ? (W - 2 * M - G2) / 2 : W - 2 * M, rh = both ? 50 : stOn('top') ? 38 : 44;
+      const maxR = stOn('top') ? (both ? 5 : 7) : Math.max(3, Math.min(10, Math.floor((1548 - y - 14) / rh)));   // no Top rated: room for more rows
+      let yb = y;
+      if (showS) { blockLabel(ctx, 'BY SECTION', M, y, 25); yb = Math.max(yb, drawBars(ctx, M, y + 14, cw, rh, maxR, d.sections, 1, 'sections', both)); }
+      if (showP) { const px = showS ? M + cw + G2 : M; blockLabel(ctx, 'WHERE I WATCHED', px, y, 25); yb = Math.max(yb, drawBars(ctx, px, y + 14, cw, rh, maxR, d.places, 1, 'places', both)); }
+      y = yb + 50;
+    }
+    if (stOn('top')) {
+      const n = Math.max(0, Math.min(3, d.top.length, Math.floor((1548 - y - 14) / 100)));
+      if (n || !d.top.length) blockLabel(ctx, d.top.length ? 'TOP RATED' : 'TOP RATED · RATE A FILM TO FILL THIS', M, y, 25);
+      d.top.slice(0, n).forEach((f, i) => drawTopRow(ctx, M, y + 14 + i * 104, W - 2 * M, 98, i, f, ims.get(f.id), 0.94));
+    }
   }
   function drawStatsX(ctx, d, logo14, logoGT, avIm, hdl, ims) {
     const W = SH.W, H = SH.H, M = SH.M;
     drawXHeader(ctx, W, logo14, logoGT, avIm, hdl ? 'MY QCINEMA 2026 · IN NUMBERS' : 'QCINEMA 2026 · IN NUMBERS', hdl || 'MY FESTIVAL', !!hdl);
-    const top = SH.TOP, bottom = H - SH.BOTTOM, G = 18, gw = 1000, tw = (gw - 2 * G) / 3, th = (bottom - top - G) / 2, u = 0.92;
-    statTiles(d).forEach((t, i) => drawStatTile(ctx, M + (i % 3) * (tw + G), top + Math.floor(i / 3) * (th + G), tw, th, t, u, 2));
-    const lx = M + gw + 40, lw = W - M - lx;
+    const top = SH.TOP, bottom = H - SH.BOTTOM, G = 18, tiles = statTiles(d);
+    const showS = stOn('sections') && d.sections.length, showP = stOn('places') && d.places.length, showT = stOn('top');
+    const side = showS || showP || showT, gw = side ? 1000 : W - 2 * M;
+    if (tiles.length) drawTileGrid(ctx, M, top, gw, (bottom - top - G) / 2, G, tiles, 0.92, 2);
+    if (!side) return;
+    const lx = tiles.length ? M + gw + 40 : M, lw = W - M - lx;
     let y = top + 16;
-    if (d.sections.length) { blockLabel(ctx, 'BY SECTION', lx, y, 15); y = drawSections(ctx, lx, y + 8, lw, 30, 6, d.sections, 0.72) + 36; }
+    if (!showT) {
+      const lists = [showS && ['BY SECTION', d.sections, 'sections'], showP && ['WHERE I WATCHED', d.places, 'places']].filter(Boolean);
+      const cap = lists.length > 1 ? 6 : 9, nRows = lists.reduce((a, l) => a + Math.min(l[1].length, cap), 0), heads = lists.length * 30 + (lists.length - 1) * 34;
+      const rh = Math.max(40, Math.min(70, (bottom - top - 16 - heads) / nRows)), u = Math.min(1.1, rh / 60);
+      for (const [label, list, kind] of lists) { blockLabel(ctx, label, lx, y, 17); y = drawBars(ctx, lx, y + 10, lw, rh, cap, list, u, kind, true) + 44; }
+      return;
+    }
+    if (showS) { blockLabel(ctx, 'BY SECTION', lx, y, 15); y = drawBars(ctx, lx, y + 8, lw, 30, showP ? 5 : 6, d.sections, 0.72, 'sections', false) + 36; }
+    if (showP) { blockLabel(ctx, 'WHERE I WATCHED', lx, y, 15); y = drawBars(ctx, lx, y + 8, lw, 30, showS ? 4 : 6, d.places, 0.72, 'places', false) + 36; }
     blockLabel(ctx, 'TOP RATED', lx, y, 15);
     if (!d.top.length) { setFont(ctx, 600, 17, FB, 'normal', 0); ctx.fillStyle = C.muted; ctx.fillText('Rate a film to fill this.', lx, y + 34); return; }
     const avail = bottom - y - 10, n = Math.max(1, Math.min(5, d.top.length, Math.floor(avail / 84))), rh = Math.min(112, avail / n);
@@ -2941,7 +3000,7 @@ legend{padding:0;margin-bottom:6px}
   async function buildStats() {
     const my = ++stGen, d = statsData(), hdl = viewHandle(), av = avatarOf(viewing), ig = stFmt === 'ig';
     const img = $('#stImg'), ph = $('#stPh'), cap = $('#stCap'), save = $('#stSave');
-    const key = JSON.stringify([stFmt, stOutside, d, d.top.slice(0, 5).map(f => [f.id, f.title, f.image]), hdl, av.length, av.slice(-48)]);
+    const key = JSON.stringify([stFmt, stOutside, [...stHide], d, d.top.slice(0, 5).map(f => [f.id, f.title, f.image]), hdl, av.length, av.slice(-48)]);
     if (key === stKey && (stBlob || !(d.fest + d.outside))) return;
     ph.classList.toggle('tall9', ig);
     if (!(d.fest + d.outside)) {
@@ -2972,6 +3031,11 @@ legend{padding:0;margin-bottom:6px}
     stFmt = r.value === 'x' ? 'x' : 'ig';
     try { localStorage.setItem('qc-st-fmt', stFmt); } catch (_) {}
     scheduleStats();
+  }));
+  $('#stShow').replaceChildren(...ST_OPTS.map(([k, label]) => {
+    const inp = h('input', { type: 'checkbox', value: k }); inp.checked = stOn(k);
+    inp.onchange = () => { if (inp.checked) stHide.delete(k); else stHide.add(k); try { localStorage.setItem('qc-st-hide', JSON.stringify([...stHide])); } catch (_) {} scheduleStats(); };
+    return h('label', null, inp, h('span', { text: label }));
   }));
   $('#stOutside').checked = stOutside;
   $('#stOutside').onchange = () => { stOutside = $('#stOutside').checked; try { localStorage.setItem('qc-st-outside', stOutside ? '1' : '0'); } catch (_) {} scheduleStats(); };
