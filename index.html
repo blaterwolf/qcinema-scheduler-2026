@@ -449,6 +449,10 @@ legend{padding:0;margin-bottom:6px}
 .buyvia{margin-top:8px;align-items:center}
 .buyvia[hidden]{display:none}
 .buyvia .bvl{font-size:12.5px;color:var(--muted);margin-right:4px}
+.pricerow{display:flex;gap:8px}
+.peso-in{position:relative;display:inline-flex;align-items:center;width:160px}
+.peso-in > span{position:absolute;left:12px;color:var(--muted);font-weight:600;pointer-events:none}
+.peso-in input{padding-left:28px}
 .fhint:empty{display:none}
 .row-opts{display:grid;grid-template-columns:auto auto;justify-content:start;gap:14px 26px}
 .info{border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--muted);display:grid;gap:3px}
@@ -714,6 +718,9 @@ legend{padding:0;margin-bottom:6px}
     <div class="opts buyvia" id="buyVia" hidden><small class="bvl" id="buyViaL">Bought</small>
       <label><input type="radio" name="buy" value=""><span>At the cinema · ₱201</span></label>
       <label><input type="radio" name="buy" value="online"><span>Online on eTix · ₱251</span></label>
+    </div>
+    <div class="buyvia pricerow" id="priceRow" hidden><small class="bvl" id="priceL">Price</small>
+      <span class="peso-in"><span aria-hidden="true">₱</span><input type="number" id="fPrice" min="0" step="0.01" inputmode="decimal" placeholder="0" aria-label="Ticket price in pesos"></span>
     </div><p class="fhint" id="badgeHint"></p></fieldset>
 
     <label class="f"><span>Notes</span><textarea id="fNotes" rows="3" maxlength="800" placeholder="Seat, who you're going with, what to catch after"></textarea></label>
@@ -808,6 +815,7 @@ legend{padding:0;margin-bottom:6px}
     for (const c of kids.flat()) { if (c == null || c === false) continue; el.append(c.nodeType ? c : document.createTextNode(c)); }
     return el;
   }
+  const tixPrice = f => f.kind === 'outside' && +f.price > 0 ? ' · ₱' + (+f.price).toLocaleString('en-US', { maximumFractionDigits: 2 }) : '';   // outside ticket price on tags
   const toMin = t => { const m = /^(\d{1,2}):(\d{2})/.exec(t || ''); return m ? (+m[1]) * 60 + (+m[2]) : null; };
   // admissions: the screenings of a double bill share one key, so they take one ticket or one badge pass between them
   const admKey = f => (f.sid && CAT.dbl.get(f.sid)) || f.id || f.sid;
@@ -1186,9 +1194,9 @@ legend{padding:0;margin-bottom:6px}
     const tags = h('div', { class: 'tags' });
     if (f.ticket === 'badge') tags.append(h('span', { class: 'tag badge', text: '🎫 Badge' }));
     else if (f.ticket === 'tobuy') tags.append(canWrite
-      ? h('button', { type: 'button', class: 'tag tobuy', title: 'Mark as bought', onclick: e => { e.stopPropagation(); markBought(f); } }, '💵 To buy')
-      : h('span', { class: 'tag tobuy', text: '💵 To buy' }));
-    else if (f.ticket === 'bought') tags.append(h('span', { class: 'tag bought', text: f.buy === 'online' ? '✓ Bought · eTix' : '✓ Bought' }));
+      ? h('button', { type: 'button', class: 'tag tobuy', title: 'Mark as bought', onclick: e => { e.stopPropagation(); markBought(f); } }, '💵 To buy' + tixPrice(f))
+      : h('span', { class: 'tag tobuy', text: '💵 To buy' + tixPrice(f) }));
+    else if (f.ticket === 'bought') tags.append(h('span', { class: 'tag bought', text: (f.buy === 'online' ? '✓ Bought · eTix' : '✓ Bought') + tixPrice(f) }));
     else if (f.ticket === 'free' && !(f.extras || []).includes('Free')) tags.append(h('span', { class: 'tag xtra', text: 'Free' }));
     if (plan === 'maybe') tags.append(h('span', { class: 'tag maybe', text: '☆ Maybe' }));
     for (const x of f.extras || []) tags.append(h('span', { class: 'tag xtra', title: x === 'Q&A' && f.guests ? `Q&A with ${f.guests}` : null, text: x }));
@@ -1273,7 +1281,7 @@ legend{padding:0;margin-bottom:6px}
       const tags = h('div', { class: 'tags' });
       if (f.ticket === 'badge') tags.append(h('span', { class: 'tag badge', text: '🎫 Badge' }));
       else if (f.ticket === 'tobuy') tags.append(h('span', { class: 'tag tobuy', text: '💵 To buy' }));
-      else if (f.ticket === 'bought') tags.append(h('span', { class: 'tag bought', text: f.buy === 'online' ? '✓ Bought · eTix' : '✓ Bought' }));
+      else if (f.ticket === 'bought') tags.append(h('span', { class: 'tag bought', text: (f.buy === 'online' ? '✓ Bought · eTix' : '✓ Bought') + tixPrice(f) }));
     else if (f.ticket === 'free' && !(f.extras || []).includes('Free')) tags.append(h('span', { class: 'tag xtra', text: 'Free' }));
       if (f.kind === 'outside') tags.append(h('span', { class: 'tag out', text: 'Outside QCinema' }));
       for (const x of f.extras || []) tags.append(h('span', { class: 'tag xtra', text: x }));
@@ -1569,7 +1577,7 @@ legend{padding:0;margin-bottom:6px}
     $('#fTime').value = f ? f.time || '' : ''; $('#fEnd').value = f ? f.end || '' : '';
     $('#fVenue').value = f ? f.venue || '' : '';
     $('#fNotes').value = f ? f.notes || '' : '';
-    setRadio('kind', (f && f.kind) || 'film'); setRadio('plan', (f && f.plan) || 'going'); setRadio('ticket', (f && f.ticket) || ''); setRadio('buy', (f && f.buy) || ''); syncTicketOpts(); fillOrOptions();
+    setRadio('kind', (f && f.kind) || 'film'); setRadio('plan', (f && f.plan) || 'going'); setRadio('ticket', (f && f.ticket) || ''); setRadio('buy', (f && f.buy) || ''); $('#fPrice').value = f && +f.price > 0 ? String(+f.price) : ''; syncTicketOpts(); fillOrOptions();
     showImg(img ? imgSrc(img.id) : null);
     $('#imgrow').hidden = !assets;
     const info = $('#info'); info.replaceChildren();
@@ -1656,6 +1664,7 @@ legend{padding:0;margin-bottom:6px}
     $('#tBadge').disabled = outside || full;
     $('#tBadgeLbl').textContent = `🎫 Festival badge · ${Math.min(BADGE_MAX, used + (chosen && !shared ? 1 : 0))}/${BADGE_MAX}`;
     const tk = getRadio('ticket'); $('#buyVia').hidden = outside || (tk !== 'tobuy' && tk !== 'bought') || !!(editing && (editing.extras || []).includes('Free')); $('#buyViaL').textContent = tk === 'bought' ? 'Bought' : 'Buying';
+    $('#priceRow').hidden = !outside || (tk !== 'tobuy' && tk !== 'bought'); $('#priceL').textContent = tk === 'bought' ? 'Paid' : 'Price';
     $('#badgeHint').textContent = outside ? 'The festival badge only covers QCinema screenings.'
       : full ? `All ${BADGE_MAX} badge passes are assigned. Free one up on another film to use it here.`
       : dw.length ? `Double bill with ${dw.join(' + ')}: one ticket or badge pass covers both.` : '';
@@ -1663,6 +1672,8 @@ legend{padding:0;margin-bottom:6px}
   form.querySelectorAll('input[name="kind"], input[name="ticket"]').forEach(r => r.addEventListener('change', syncTicketOpts));
   // "online" when the ticket is (to be) bought on eTix; empty = at the cinema
   const buyVal = () => !$('#buyVia').hidden && getRadio('buy') === 'online' ? 'online' : '';
+  // Outside QCinema ticket price in pesos (0 = not set)
+  const priceVal = () => { if ($('#priceRow').hidden) return 0; const v = parseFloat($('#fPrice').value); return v > 0 && v < 1e6 ? Math.round(v * 100) / 100 : 0; };
 
   form.addEventListener('submit', async e => {
     e.preventDefault(); if (busy || !db || !me) return;
@@ -1686,7 +1697,7 @@ legend{padding:0;margin-bottom:6px}
       if (time && end && toMin(end) <= toMin(time)) { showErr('The end time should be after the start time.'); $('#fEnd').focus(); return; }
       data = editing ? { ...(planOf(me).items.get(editing.id) || {}) } : {};
       Object.assign(data, { title, year, kind: getRadio('kind') || 'film', day: daySel.value, time, end,
-        venue: $('#fVenue').value.trim(), plan: getRadio('plan') || 'going', ticket: getRadio('ticket'), buy: buyVal(),
+        venue: $('#fVenue').value.trim(), plan: getRadio('plan') || 'going', ticket: getRadio('ticket'), buy: buyVal(), price: priceVal(),
         notes: $('#fNotes').value.trim(), image: img, order: data.order ?? Date.now() });
       label = title;
     }
@@ -2881,6 +2892,8 @@ legend{padding:0;margin-bottom:6px}
       else if (g.some(f => f.ticket === 'free' || (f.extras || []).includes('Free'))) { if (seen1) free++; }
       else if (paid.length) { if (paid.some(f => f.buy === 'online')) online++; else cinema++; }
     }
+    let outPaid = 0, outSpent = 0;   // Outside QCinema tickets with a price: bought, or to buy and watched
+    if (stOutside) for (const f of live) if (f.kind === 'outside' && +f.price > 0 && (f.ticket === 'bought' || (f.ticket === 'tobuy' && f.watched))) { outPaid++; outSpent += +f.price; }
     const days = new Map(); for (const f of fest) days.set(f.day, (days.get(f.day) || 0) + 1);
     const busiest = [...days].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0] || null;
     const sec = new Map();
@@ -2893,13 +2906,13 @@ legend{padding:0;margin-bottom:6px}
     const places = [...pl].map(([name, n]) => ({ name, n })).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
     const top = rated.slice().sort((a, b) => b.rating - a.rating || (b.liked ? 1 : 0) - (a.liked ? 1 : 0) || (a.day || '').localeCompare(b.day || '') || cmpFilm(a, b));
     return { fest: fest.length - progs + shorts, outside: outside.length, talks, mins: seen.reduce((a, f) => a + minsOf(f), 0), avg, rated: rated.length, hearts: seen.filter(f => f.liked).length,
-      shorts, progs, shortAvg: sN ? sSum / sN : 0, badge, badgeSeen, cinema, online, free, spent: badge * PRICE.badge + cinema * PRICE.cinema + online * PRICE.online,
+      shorts, progs, shortAvg: sN ? sSum / sN : 0, badge, badgeSeen, cinema, online, free, outPaid, spent: badge * PRICE.badge + cinema * PRICE.cinema + online * PRICE.online + outSpent,
       days: atDays.length, first: atDays[0] || '', last: atDays[atDays.length - 1] || '', busiest, sections, places, top };
   }
   function statTiles(d) {
     const dd = d.busiest && dayOf(d.busiest[0]), h = Math.floor(d.mins / 60), m = d.mins % 60;
     const filmsSub = [d.outside ? `Incl. ${d.outside} outside QCinema` : '', d.talks ? `Attended ${d.talks} Industry ${d.talks === 1 ? 'talk' : 'talks'}` : ''].filter(Boolean);
-    const spentParts = [d.badge ? `${d.badge} badge` : '', d.cinema ? `${d.cinema} at the cinema` : '', d.online ? `${d.online} on eTix` : '', d.free ? `${d.free} free` : ''].filter(Boolean);
+    const spentParts = [d.badge ? `${d.badge} badge` : '', d.cinema ? `${d.cinema} at the cinema` : '', d.online ? `${d.online} on eTix` : '', d.free ? `${d.free} free` : '', d.outPaid ? `${d.outPaid} outside` : ''].filter(Boolean);
     const all = [
       { key: 'films', label: 'FILMS WATCHED', value: String(d.fest + d.outside), sub: filmsSub.length ? filmsSub : d.days ? `Over ${d.days} ${d.days === 1 ? 'day' : 'days'}` : '' },
       { key: 'time', label: 'IN THE CINEMA', value: d.mins ? `${h}h ${String(m).padStart(2, '0')}m` : '0h', sub: dd ? `Busiest: ${dd.wd} Nov ${dd.d} (${d.busiest[1]})` : '' },
