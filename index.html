@@ -588,7 +588,7 @@ legend{padding:0;margin-bottom:6px}
 <section class="wrap share stats" id="stats" aria-labelledby="statsTitle">
   <div class="share-copy">
     <h2 id="statsTitle">Festival stats</h2>
-    <p>Your QCinema 2026 in numbers: films watched, talks attended, time in the cinema, your average rating and hearts, shorts watched, what you spent, a breakdown by festival section, where you watched and your top-rated films. Switch off anything you’d rather not share under Show. Money: each badge screening counts as ₱200, a ticket as ₱201 at the cinema or ₱251 online on eTix (set it per film under Ticket), and free screenings as ₱0. A double bill (two titles back to back in the same cinema) counts as one ticket or badge pass.</p>
+    <p>Your QCinema 2026 in numbers, ready to post. Switch off anything you’d rather not share.</p>
     <fieldset><legend>Size</legend><div class="opts">
       <label><input type="radio" name="stfmt" value="ig"><span>Instagram story · 1080 × 1920</span></label>
       <label><input type="radio" name="stfmt" value="x"><span>X post · 3200 × 1800</span></label>
@@ -3004,7 +3004,7 @@ legend{padding:0;margin-bottom:6px}
     const big = hdl || 'MY QCINEMA 2026'; let bs = 62; setFont(ctx, 800, bs, FA, 'normal', 0);
     while (bs > 32 && ctx.measureText(big).width > W - M - tx) { bs -= 2; setFont(ctx, 800, bs, FA, 'normal', 0); }
     ctx.fillStyle = hdl ? SB.yellow : C.ink; ctx.fillText(wrapLines(ctx, big, W - M - tx, 1)[0] || '', tx, 344);
-    setFont(ctx, 600, 24, FB, 'normal', 0); ctx.fillStyle = C.muted; ctx.fillText(`Nov 13–22, 2026 · Quezon City${d.days ? ` · ${d.days} ${d.days === 1 ? 'day' : 'days'} at the festival` : ''}`, tx, 384);
+    setFont(ctx, 600, 24, FB, 'normal', 0); ctx.fillStyle = C.muted; ctx.fillText(`Nov 13–22, 2026${d.days ? ` · ${d.days} ${d.days === 1 ? 'day' : 'days'} at the festival` : ''}`, tx, 384);
     let y = 414;
     const tiles = statTiles(d);
     if (tiles.length) y = drawTileGrid(ctx, M, y, W - 2 * M, 192, 18, tiles, 0.9, 2) + 54; else y += 40;
@@ -3019,7 +3019,7 @@ legend{padding:0;margin-bottom:6px}
       y = yb + 50;
     }
     if (stOn('top')) {
-      const n = Math.max(0, Math.min(3, d.top.length, Math.floor((1548 - y - 14) / 100)));
+      const n = Math.max(0, Math.min(5, d.top.length, Math.floor((1548 - y - 14) / 104)));   // up to 5 when the lists are off
       if (n || !d.top.length) blockLabel(ctx, d.top.length ? 'TOP RATED' : 'TOP RATED · RATE A FILM TO FILL THIS', M, y, 25);
       d.top.slice(0, n).forEach((f, i) => drawTopRow(ctx, M, y + 14 + i * 104, W - 2 * M, 98, i, f, ims.get(f.id), 0.94));
     }
@@ -3062,7 +3062,7 @@ legend{padding:0;margin-bottom:6px}
       ph.textContent = !loadedFilms ? 'Building your stats…' : 'Mark the films you watched (★ Rate on a card) and your stats show up here.';
       return;
     }
-    const tops = d.top.slice(0, ig ? 3 : 5);
+    const tops = d.top.slice(0, 5);
     const [tpl, logo14, logoGT, avIm, ...thumbs] = await Promise.all([ig ? loadImg('logos/ig-story-template.png') : null, ig ? null : loadImg('logos/qc14.png'), ig ? null : loadImg('logos/genreteurs.png'),
       av ? loadImg(av) : null, ...tops.map(f => f.image && f.image.id && picSrc(f.image.id) ? loadImg(picSrc(f.image.id)) : null)]);
     const ims = new Map(tops.map((f, i) => [f.id, thumbs[i]]));
