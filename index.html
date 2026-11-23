@@ -2861,7 +2861,8 @@ legend{padding:0;margin-bottom:6px}
     const live = films.filter(f => !f.cancelled), watched = live.filter(f => f.watched);
     const fest = watched.filter(f => f.kind !== 'outside' && f.kind !== 'talk'), outside = stOutside ? watched.filter(f => f.kind === 'outside') : [];
     const seen = [...fest, ...outside];
-    const talks = live.filter(f => f.kind === 'talk' && (f.watched || (f.ended && f.plan !== 'maybe'))).length;
+    const talkList = live.filter(f => f.kind === 'talk' && (f.watched || (f.ended && f.plan !== 'maybe'))), talks = talkList.length;
+    const atDays = [...new Set([...fest, ...talkList].map(f => f.day).filter(d => dayOf(d)))].sort();   // days at the festival
     const minsOf = f => { const fm = f.filmId && CAT.films.get(f.filmId); if (fm && +fm.mins) return +fm.mins; const a = toMin(f.time), b = toMin(f.end); return a != null && b != null ? (b - a + 1440) % 1440 : 0; };
     const rated = seen.filter(f => +f.rating > 0), avg = rated.length ? rated.reduce((a, f) => a + +f.rating, 0) / rated.length : 0;
     let shorts = 0, progs = 0, sSum = 0, sN = 0;   // shorts watched = every short in a watched shorts program
@@ -2893,7 +2894,7 @@ legend{padding:0;margin-bottom:6px}
     const top = rated.slice().sort((a, b) => b.rating - a.rating || (b.liked ? 1 : 0) - (a.liked ? 1 : 0) || (a.day || '').localeCompare(b.day || '') || cmpFilm(a, b));
     return { fest: fest.length - progs + shorts, outside: outside.length, talks, mins: seen.reduce((a, f) => a + minsOf(f), 0), avg, rated: rated.length, hearts: seen.filter(f => f.liked).length,
       shorts, progs, shortAvg: sN ? sSum / sN : 0, badge, badgeSeen, cinema, online, free, spent: badge * PRICE.badge + cinema * PRICE.cinema + online * PRICE.online,
-      days: days.size, busiest, sections, places, top };
+      days: atDays.length, first: atDays[0] || '', last: atDays[atDays.length - 1] || '', busiest, sections, places, top };
   }
   function statTiles(d) {
     const dd = d.busiest && dayOf(d.busiest[0]), h = Math.floor(d.mins / 60), m = d.mins % 60;
@@ -3004,7 +3005,8 @@ legend{padding:0;margin-bottom:6px}
     const big = hdl || 'MY QCINEMA 2026'; let bs = 62; setFont(ctx, 800, bs, FA, 'normal', 0);
     while (bs > 32 && ctx.measureText(big).width > W - M - tx) { bs -= 2; setFont(ctx, 800, bs, FA, 'normal', 0); }
     ctx.fillStyle = hdl ? SB.yellow : C.ink; ctx.fillText(wrapLines(ctx, big, W - M - tx, 1)[0] || '', tx, 344);
-    setFont(ctx, 600, 24, FB, 'normal', 0); ctx.fillStyle = C.muted; ctx.fillText(`Nov 13–22, 2026${d.days ? ` · ${d.days} ${d.days === 1 ? 'day' : 'days'} at the festival` : ''}`, tx, 384);
+    setFont(ctx, 600, 24, FB, 'normal', 0); ctx.fillStyle = C.muted; const fd = d.first && dayOf(d.first), ld = d.last && dayOf(d.last), range = fd && ld ? (fd === ld ? `Nov ${fd.d}, 2026` : `Nov ${fd.d}–${ld.d}, 2026`) : 'Nov 13–22, 2026';
+    ctx.fillText(`${range}${d.days ? ` · ${d.days} ${d.days === 1 ? 'day' : 'days'} at the festival` : ''}`, tx, 384);
     let y = 414;
     const tiles = statTiles(d);
     if (tiles.length) y = drawTileGrid(ctx, M, y, W - 2 * M, 192, 18, tiles, 0.9, 2) + 54; else y += 40;
