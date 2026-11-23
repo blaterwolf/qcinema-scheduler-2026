@@ -588,7 +588,7 @@ legend{padding:0;margin-bottom:6px}
 <section class="wrap share stats" id="stats" aria-labelledby="statsTitle">
   <div class="share-copy">
     <h2 id="statsTitle">Festival stats</h2>
-    <p>Your QCinema 2026 in numbers: films watched, talks attended, time in the cinema, your average rating and hearts, shorts watched, what you spent, a breakdown by festival section, where you watched and your top-rated films. Switch off anything you’d rather not share under Show. Money: each badge screening counts as ₱200, a ticket as ₱201 at the cinema or ₱251 online on eTix (set it per film under Ticket), and free screenings as ₱0.</p>
+    <p>Your QCinema 2026 in numbers: films watched, talks attended, time in the cinema, your average rating and hearts, shorts watched, what you spent, a breakdown by festival section, where you watched and your top-rated films. Switch off anything you’d rather not share under Show. Money: each badge screening counts as ₱200, a ticket as ₱201 at the cinema or ₱251 online on eTix (set it per film under Ticket), and free screenings as ₱0. A double bill (two titles back to back in the same cinema) counts as one ticket or badge pass.</p>
     <fieldset><legend>Size</legend><div class="opts">
       <label><input type="radio" name="stfmt" value="ig"><span>Instagram story · 1080 × 1920</span></label>
       <label><input type="radio" name="stfmt" value="x"><span>X post · 3200 × 1800</span></label>
@@ -722,7 +722,7 @@ legend{padding:0;margin-bottom:6px}
 
     <div class="dlg-f">
       <button type="button" class="btn danger" id="delBtn">Delete</button>
-      <span class="confirm" id="delConfirm" hidden>Remove from your schedule? <button type="button" class="btn yes" id="delYes">Remove</button><button type="button" class="btn" id="delNo">Keep</button></span>
+      <span class="confirm" id="delConfirm" hidden><span id="delQ">Remove from your schedule?</span> <button type="button" class="btn yes" id="delYes">Remove</button><button type="button" class="btn" id="delNo">Keep</button></span>
       <span class="sp"></span>
       <button type="button" class="btn" id="cancelBtn">Cancel</button>
       <button type="submit" class="btn primary" id="saveBtn">Save</button>
@@ -791,7 +791,7 @@ legend{padding:0;margin-bottom:6px}
   const posters = new Map();  // filmId -> shared poster image
   const names = new Map();    // uid -> profile name
   let withAll = new Map();    // sid -> [uid] who picked that screening
-  const CAT = { ready: false, ev: new Map(), films: new Map(), byFilm: new Map(), byDay: new Map(), cancel: new Map(), shorts: new Map(), fetchedAt: '' };
+  const CAT = { ready: false, ev: new Map(), films: new Map(), byFilm: new Map(), byDay: new Map(), cancel: new Map(), shorts: new Map(), dbl: new Map(), fetchedAt: '' };
   const cancelOf = sid => CAT.cancel.get(sid) || null;   // { note, source, label } when that screening won't push through
   const cardCache = new Map();
   const rows = {};
@@ -809,6 +809,17 @@ legend{padding:0;margin-bottom:6px}
     return el;
   }
   const toMin = t => { const m = /^(\d{1,2}):(\d{2})/.exec(t || ''); return m ? (+m[1]) * 60 + (+m[2]) : null; };
+  // admissions: the screenings of a double bill share one key, so they take one ticket or one badge pass between them
+  const admKey = f => (f.sid && CAT.dbl.get(f.sid)) || f.id || f.sid;
+  const badgePasses = list => new Set(list.filter(f => f.ticket === 'badge' && !f.cancelled).map(admKey)).size;
+  const dblSids = sid => {   // the other screening(s) of this one's double bill, in time order
+    const k = sid && CAT.dbl.get(sid), out = []; if (!k) return out;
+    for (const [s2, k2] of CAT.dbl) if (k2 === k && s2 !== sid && CAT.ev.has(s2)) out.push(s2);
+    return out.sort((a, b) => CAT.ev.get(a).start.localeCompare(CAT.ev.get(b).start));
+  };
+  const sidTitle = sid => (CAT.films.get((CAT.ev.get(sid) || {}).filmId) || {}).title || 'screening';
+  const dblWith = sid => dblSids(sid).map(sidTitle);   // titles shown back to back with this screening
+  const dblTag = titles => h('span', { class: 'tag xtra', title: 'Shown back to back in the same cinema: one ticket or one badge pass covers both', text: `Double bill with ${titles.join(' + ')}` });
   function fmt12(t) { const m = toMin(t); if (m == null) return ''; let H = Math.floor(m / 60) % 24; const ap = H >= 12 ? 'PM' : 'AM'; H = H % 12 || 12; return `${H}:${String(m % 60).padStart(2, '0')} ${ap}`; }
   function fmtRange(a, b) {
     if (!a) return '';
@@ -908,6 +919,14 @@ legend{padding:0;margin-bottom:6px}
       const byTime = (a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start);
       for (const l of CAT.byFilm.values()) l.sort(byTime);
       for (const l of CAT.byDay.values()) l.sort(byTime);
+      // double bills: back to back in the same cinema (the second starts 0–2 minutes after the first ends) = one admission
+      for (const l of CAT.byDay.values()) {
+        const byVenue = new Map(); for (const ev of l) (byVenue.get(ev.venue) || byVenue.set(ev.venue, []).get(ev.venue)).push(ev);
+        for (const vl of byVenue.values()) for (let i = 1; i < vl.length; i++) {
+          const a = vl[i - 1], b = vl[i], gap = toMin(b.start) - toMin(a.end);
+          if (gap >= 0 && gap <= 2) { const k = CAT.dbl.get(a.sid) || a.sid; CAT.dbl.set(a.sid, k); CAT.dbl.set(b.sid, k); }
+        }
+      }
       // festival advisories: whole films or single screenings that won't push through
       const cx = j.cancelled || {};
       for (const [fid, info] of Object.entries(cx.films || {})) for (const ev of CAT.byFilm.get(fid) || []) CAT.cancel.set(ev.sid, info || {});
@@ -1016,10 +1035,14 @@ legend{padding:0;margin-bottom:6px}
   async function addFromCatalog(sid) {
     if (!db || !me || !writable) return;
     const ev = CAT.ev.get(sid); if (!ev || cancelOf(sid) || planOf(me).items.has(sid)) return;
+    // a double bill comes as a pair: adding one screening adds the other(s) too
+    const sids = [sid, ...dblSids(sid).filter(x => !cancelOf(x) && !planOf(me).items.has(x))].sort((a, b) => CAT.ev.get(a).start.localeCompare(CAT.ev.get(b).start));
     try {
-      await itemsCol().doc(sid).set({ sid, plan: 'going', ticket: '', notes: '', orGroup: '', order: Date.now(), snap: snapOf(sid) });
+      const t0 = Date.now();
+      for (const [i, x] of sids.entries()) await itemsCol().doc(x).set({ sid: x, plan: 'going', ticket: '', notes: '', orGroup: '', order: t0 + i, snap: snapOf(x) });
       await ensureMyDoc();
-      toast(`Added ${(CAT.films.get(ev.filmId) || {}).title || 'screening'} · ${shortDay(ev.date)}, ${fmt12(ev.start)}`);
+      const ev0 = CAT.ev.get(sids[0]);
+      toast(`Added ${sids.map(sidTitle).join(' + ')} · ${shortDay(ev0.date)}, ${fmt12(ev0.start)}`);
     } catch (e) { refused(e); }
   }
 
@@ -1066,7 +1089,8 @@ legend{padding:0;margin-bottom:6px}
       h('span', { class: 'cs', text: fm.program || '' }),
       h('span', { class: 'cn' }, fm.title || '', fm.year ? h('span', { class: 'yr', text: ` (${fm.year})` }) : null),
       h('span', { class: 'cv', text: [e.venue, fm.mins ? `${fm.mins} min` : '', fm.director && fm.director !== 'To be announced' ? `dir. ${fm.director}` : ''].filter(Boolean).join(' · ') }));
-    const ex = evExtras(e, fm); if (ex.length) meta.append(h('div', { class: 'tags' }, ...ex.map(x => h('span', { class: 'tag xtra', title: x === 'Q&A' && e.guests ? `Q&A with ${e.guests}` : null, text: x }))));
+    const ex = evExtras(e, fm), dw = dblWith(e.sid);
+    if (ex.length || dw.length) meta.append(h('div', { class: 'tags' }, ...ex.map(x => h('span', { class: 'tag xtra', title: x === 'Q&A' && e.guests ? `Q&A with ${e.guests}` : null, text: x })), ...(dw.length ? [dblTag(dw)] : [])));
     if (cx) meta.append(advisoryNote(cx, 'ccancel'));
     if (clashes.length) meta.append(h('span', { class: 'cwarn', text: `Overlaps ${clashes.join(', ')} in your schedule` }));
     if (friends.length) meta.append(h('span', { class: 'cfr', text: `Also going: ${friends.join(', ')}` }));
@@ -1168,6 +1192,7 @@ legend{padding:0;margin-bottom:6px}
     else if (f.ticket === 'free' && !(f.extras || []).includes('Free')) tags.append(h('span', { class: 'tag xtra', text: 'Free' }));
     if (plan === 'maybe') tags.append(h('span', { class: 'tag maybe', text: '☆ Maybe' }));
     for (const x of f.extras || []) tags.append(h('span', { class: 'tag xtra', title: x === 'Q&A' && f.guests ? `Q&A with ${f.guests}` : null, text: x }));
+    { const dw = dblWith(f.sid); if (dw.length) tags.append(dblTag(dw)); }
     if (clashes && clashes.length) tags.append(h('span', { class: 'tag clash', text: `Clashes with ${clashes.join(', ')}` }));
     if (dups && dups.length) tags.append(h('span', { class: 'tag dup', text: `Also on ${dups.join(', ')}` }));
     if (f.gone) tags.append(h('span', { class: 'tag gone', text: 'No longer in the festival schedule' }));
@@ -1399,6 +1424,7 @@ legend{padding:0;margin-bottom:6px}
     // counts
     const c = { all: films.length, going: 0, maybe: 0, watched: 0, badge: 0, tobuy: 0, bought: 0, outside: 0 };
     for (const f of films) { f.plan === 'maybe' ? c.maybe++ : c.going++; if (c[f.ticket] != null && f.ticket && !(f.cancelled && f.ticket === 'badge')) c[f.ticket]++; if (f.kind === 'outside') c.outside++; if (f.watched) c.watched++; }
+    c.badge = badgePasses(films);   // a double bill uses one pass
     document.querySelectorAll('[data-c]').forEach(b => b.textContent = b.dataset.c === 'badge' ? `${c.badge}/${BADGE_MAX}` : c[b.dataset.c]);
 
     const today = new Date(); const todayId = today.getFullYear() === 2026 && today.getMonth() === 10 ? `2026-11-${today.getDate()}` : '';
@@ -1468,7 +1494,7 @@ legend{padding:0;margin-bottom:6px}
     if (statusOverride) { el.replaceChildren(h('span', { class: statusOverride.warn ? 'warn' : null, text: statusOverride.text })); return; }
     if (!loadedFilms && !films.length) { el.replaceChildren(h('span', { text: viewing && viewing !== me ? 'Loading this schedule…' : 'Loading your schedule…' })); return; }
     el.replaceChildren(
-      h('span', null, '🎫 ', h('strong', { text: String(films.filter(f => f.ticket === 'badge' && !f.cancelled).length) }), ` of ${BADGE_MAX} badge passes used`));
+      h('span', null, '🎫 ', h('strong', { text: String(badgePasses(films)) }), ` of ${BADGE_MAX} badge passes used`));
   }
 
   /* ---------- writes ---------- */
@@ -1616,18 +1642,23 @@ legend{padding:0;margin-bottom:6px}
     sel.value = partner && partner.day === day ? partner.id : '';
   }
   daySel.addEventListener('change', fillOrOptions);
-  $('#fSid').addEventListener('change', fillOrOptions);
+  $('#fSid').addEventListener('change', fillOrOptions); $('#fSid').addEventListener('change', syncTicketOpts);
   $('#fOr').addEventListener('change', () => { if ($('#fOr').value) setRadio('plan', 'maybe'); });
-  const badgeUsed = () => films.filter(x => x.ticket === 'badge' && !x.cancelled && (!editing || x.id !== editing.id)).length;
+  const others = () => films.filter(x => !editing || x.id !== editing.id);
+  const badgeUsed = () => badgePasses(others());
+  const dialogSid = () => editing && editing.catalog ? ($('#fSid').value || editing.sid) : '';
+  // the other half of this double bill already has a badge pass: this one rides on it
+  const badgeShared = () => { const k = CAT.dbl.get(dialogSid()); return !!k && others().some(x => x.ticket === 'badge' && !x.cancelled && admKey(x) === k); };
   function syncTicketOpts() {
-    const used = badgeUsed(), outside = getRadio('kind') === 'outside';
+    const used = badgeUsed(), outside = getRadio('kind') === 'outside', shared = badgeShared(), dw = dblWith(dialogSid());
     if (outside && getRadio('ticket') === 'badge') setRadio('ticket', '');
-    const chosen = getRadio('ticket') === 'badge', full = used >= BADGE_MAX && !chosen;
+    const chosen = getRadio('ticket') === 'badge', full = used >= BADGE_MAX && !chosen && !shared;
     $('#tBadge').disabled = outside || full;
-    $('#tBadgeLbl').textContent = `🎫 Festival badge · ${Math.min(BADGE_MAX, used + (chosen ? 1 : 0))}/${BADGE_MAX}`;
+    $('#tBadgeLbl').textContent = `🎫 Festival badge · ${Math.min(BADGE_MAX, used + (chosen && !shared ? 1 : 0))}/${BADGE_MAX}`;
     const tk = getRadio('ticket'); $('#buyVia').hidden = outside || (tk !== 'tobuy' && tk !== 'bought') || !!(editing && (editing.extras || []).includes('Free')); $('#buyViaL').textContent = tk === 'bought' ? 'Bought' : 'Buying';
     $('#badgeHint').textContent = outside ? 'The festival badge only covers QCinema screenings.'
-      : full ? `All ${BADGE_MAX} badge passes are assigned. Free one up on another film to use it here.` : '';
+      : full ? `All ${BADGE_MAX} badge passes are assigned. Free one up on another film to use it here.`
+      : dw.length ? `Double bill with ${dw.join(' + ')}: one ticket or badge pass covers both.` : '';
   }
   form.querySelectorAll('input[name="kind"], input[name="ticket"]').forEach(r => r.addEventListener('change', syncTicketOpts));
   // "online" when the ticket is (to be) bought on eTix; empty = at the cinema
@@ -1636,7 +1667,7 @@ legend{padding:0;margin-bottom:6px}
   form.addEventListener('submit', async e => {
     e.preventDefault(); if (busy || !db || !me) return;
     const isCat = !!(editing && editing.catalog);
-    if (getRadio('ticket') === 'badge' && (getRadio('kind') === 'outside' || badgeUsed() >= BADGE_MAX)) { showErr(getRadio('kind') === 'outside' && !isCat ? 'The festival badge only covers QCinema screenings.' : `All ${BADGE_MAX} badge passes are already assigned.`); return; }
+    if (getRadio('ticket') === 'badge' && (getRadio('kind') === 'outside' || (badgeUsed() >= BADGE_MAX && !badgeShared()))) { showErr(getRadio('kind') === 'outside' && !isCat ? 'The festival badge only covers QCinema screenings.' : `All ${BADGE_MAX} badge passes are already assigned.`); return; }
     let data, newId = editing ? editing.id : null, posterWrite = null, label;
     if (isCat) {
       const sid = $('#fSid').value || editing.sid;
@@ -1679,16 +1710,37 @@ legend{padding:0;margin-bottom:6px}
       if (posterWrite) await db.doc(`posters/${posterWrite[0]}`).set({ image: posterWrite[1] || null, by: me });
       if (partnerWrite) await itemsCol().doc(partnerWrite[0]).update(partnerWrite[1]);
       if (unlinkId) await itemsCol().doc(unlinkId).update({ orGroup: '' });
+      if (isCat) {   // double bills: the other screening(s) get the same plan and ticket; switching screenings drops the old partner
+        const mine = planOf(me).items, now = dblSids(newId);
+        if (newId !== editing.id) for (const x of dblSids(editing.id)) if (x !== newId && !now.includes(x) && mine.has(x)) await itemsCol().doc(x).delete();
+        for (const x of now) {
+          if (cancelOf(x)) continue;
+          const cur = mine.get(x);
+          if (!cur) await itemsCol().doc(x).set({ sid: x, plan: data.plan, ticket: data.ticket, buy: data.buy, notes: '', orGroup: '', order: (data.order || Date.now()) + 1, snap: snapOf(x) });
+          else if (cur.plan !== data.plan || (cur.ticket || '') !== data.ticket || (cur.buy || '') !== data.buy) await itemsCol().doc(x).update({ plan: data.plan, ticket: data.ticket, buy: data.buy });
+        }
+      }
       await ensureMyDoc();
       saved = true; dlg.close(); toast(editing ? `Saved ${label}` : `Added ${label} to ${shortDay(data.day)}`);
     } catch (err) { if (err && err.code === 'invalid_argument') { writable = false; doRefresh(); showErr("This page didn't let you save. Ask Angelo for Contributor access."); } else showErr(dbMsg(err)); }
     finally { $('#saveBtn').disabled = busy; $('#saveBtn').textContent = 'Save'; }
   });
-  $('#delBtn').onclick = () => { $('#delBtn').hidden = true; $('#delConfirm').hidden = false; $('#delNo').focus(); };
+  $('#delBtn').onclick = () => {
+    const pair = editing && editing.catalog && dblSids(editing.sid).some(x => planOf(me).items.has(x));
+    $('#delQ').textContent = pair ? 'Remove the whole double bill from your schedule?' : 'Remove from your schedule?';
+    $('#delBtn').hidden = true; $('#delConfirm').hidden = false; $('#delNo').focus();
+  };
   $('#delNo').onclick = () => { $('#delConfirm').hidden = true; $('#delBtn').hidden = false; };
   $('#delYes').onclick = async () => {
     if (!editing) return;
-    try { await itemsCol().doc(editing.id).delete(); saved = true; img = editing.ownImage ? null : img; const t = editing.title; dlg.close(); toast(`Removed ${t}`); }
+    const partners = editing.catalog ? dblSids(editing.sid).map(x => films.find(f => f.id === x)).filter(Boolean) : [];
+    try {
+      await itemsCol().doc(editing.id).delete();
+      for (const pf of partners) { await itemsCol().doc(pf.id).delete(); if (pf.ownImage && pf.image && pf.image.id && !assetInUse(pf.image.id, pf.id)) dropAsset(pf.image.id); }
+      saved = true; img = editing.ownImage ? null : img;
+      const t = [editing, ...partners].sort((a, b) => (toMin(a.time) ?? 0) - (toMin(b.time) ?? 0)).map(f => f.title).join(' + ');
+      dlg.close(); toast(`Removed ${t}`);
+    }
     catch (err) { showErr(dbMsg(err)); }
   };
 
@@ -2213,7 +2265,7 @@ legend{padding:0;margin-bottom:6px}
     }
     y += BH + 15;
     // summary line
-    const sum = [`${data.list.length} ${data.list.length === 1 ? 'entry' : 'entries'}`, `🎫 ${data.count('badge')} of ${BADGE_MAX} badge passes`, `💵 ${data.toBuy.length} to buy`, `✓ ${data.count('bought')} bought`, ...(data.list.some(f => f.watched) ? [`👁 ${data.list.filter(f => f.watched).length} watched`] : [])];
+    const sum = [`${data.list.length} ${data.list.length === 1 ? 'entry' : 'entries'}`, `🎫 ${badgePasses(data.list)} of ${BADGE_MAX} badge passes`, `💵 ${data.toBuy.length} to buy`, `✓ ${data.count('bought')} bought`, ...(data.list.some(f => f.watched) ? [`👁 ${data.list.filter(f => f.watched).length} watched`] : [])];
     if (filter !== 'all') sum.unshift(`Filter: ${filterName()}`);
     if (!dry) { setFont(ctx, 600, 8.5, FB, 'normal', 0); ctx.fillStyle = SC.muted; ctx.fillText(sum.join('   ·   '), M, y); }
     y += 13;
@@ -2793,7 +2845,7 @@ legend{padding:0;margin-bottom:6px}
   $('#srSave').onclick = () => { if (srItems.length) saveSr(srItems); };
   /* ---------- festival stats ----------
      Instagram story (1080 × 1920, drawn on the navy QCinema story template) or X post (3200 × 1800), for the schedule
-     being viewed. Money: badge screenings ₱200 each, tickets ₱201 at the cinema or ₱251 online on eTix, free ₱0.
+     being viewed. Money: badge screenings ₱200 each, tickets ₱201 at the cinema or ₱251 online on eTix, free ₱0; a double bill pays once.
      Outside QCinema films can be left out; talks attended (marked watched, or ended and going) get their own line. */
   const PRICE = { badge: 200, cinema: 201, online: 251 }, IG = { W: 1080, H: 1920, M: 60 };
   const SB = { navy: '#0e162d', cyan: '#00b2d6', yellow: '#ffb600', pink: '#f0466f', blue: '#1c3d84' };
@@ -2820,11 +2872,13 @@ legend{padding:0;margin-bottom:6px}
       for (const x of L) if (sh[x.key] && sh[x.key].r) { sSum += sh[x.key].r; sN++; }
     }
     let badge = 0, badgeSeen = 0, cinema = 0, online = 0, free = 0;
-    for (const f of live) {
-      if (f.kind === 'outside' || f.kind === 'talk') continue;
-      if (f.ticket === 'badge') { badge++; if (f.watched) badgeSeen++; }
-      else if (f.ticket === 'free' || (f.extras || []).includes('Free')) { if (f.watched) free++; }
-      else if (f.ticket === 'bought' || (f.ticket === 'tobuy' && f.watched)) { if (f.buy === 'online') online++; else cinema++; }
+    const adm = new Map();   // a double bill is one admission: one badge pass or one ticket
+    for (const f of live) { if (f.kind === 'outside' || f.kind === 'talk') continue; const k = admKey(f); (adm.get(k) || adm.set(k, []).get(k)).push(f); }
+    for (const g of adm.values()) {
+      const paid = g.filter(f => f.ticket === 'bought' || (f.ticket === 'tobuy' && f.watched)), seen1 = g.some(f => f.watched);
+      if (g.some(f => f.ticket === 'badge')) { badge++; if (seen1) badgeSeen++; }
+      else if (g.some(f => f.ticket === 'free' || (f.extras || []).includes('Free'))) { if (seen1) free++; }
+      else if (paid.length) { if (paid.some(f => f.buy === 'online')) online++; else cinema++; }
     }
     const days = new Map(); for (const f of fest) days.set(f.day, (days.get(f.day) || 0) + 1);
     const busiest = [...days].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0] || null;
